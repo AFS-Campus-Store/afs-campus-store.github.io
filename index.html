@@ -105,6 +105,20 @@ h4{font-size:15px;margin:22px 0 4px}
 .ptr.spin span{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (display-mode:standalone){html,body{overscroll-behavior-y:contain}}
+.st{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:light-dark(#e8ece6,#2a3a2e);color:var(--ink)}
+.st.ready{background:#2f6b40;color:#fff}.st.issue{background:var(--yolk);color:var(--yolk-ink)}.st.done{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.snote{margin:8px 0 0;padding:8px 12px;border-radius:10px;background:light-dark(#fff6dd,#3a3220);font-size:14px}
+#live h2{margin:22px 0 10px}
+.live{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.live.ready{border-color:#2f6b40;box-shadow:0 0 0 3px light-dark(#dcefe0,#1f3a27)}
+.live.issue{border-color:var(--yolk)}
+.lhead{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px}
+.ldesc{margin:6px 0 0;color:var(--muted);font-size:14px}
+.live details{margin-top:6px;font-size:14px}.live summary{cursor:pointer;color:var(--green2);font-weight:600;min-height:32px;display:flex;align-items:center}
+.live ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
+.dcode{margin:4px auto 10px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);max-width:320px;font-size:14px;color:var(--muted)}
+.dcode b{display:block;font-size:30px;letter-spacing:.08em;color:var(--ink);margin:2px 0}
+.dcode small{display:block;font-size:13px}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -233,6 +247,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 <nav class="chips" aria-label="Κατηγορίες"><div class="wrap" id="chips"></div></nav>
 
 <main class="wrap">
+ <div id="live"></div>
  <p class="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, διάλεξέ την στην ολοκλήρωση. Έως 10 τεμάχια ανά προϊόν.</p>
  <button class="repeat" id="repeatBtn">Επανάληψη της τελευταίας μου παραγγελίας</button>
  <div id="list"></div>
@@ -303,6 +318,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
   <div id="done" class="done" hidden>
    <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="#2f6b40"/><circle cx="60" cy="60" r="44" fill="#1d4a2c"/><path d="M38 61l15 15 30-32" fill="none" stroke="#f3b52f" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
    <h2>Η παραγγελία στάλθηκε!</h2>
+   <p class="dcode" id="doneCode" hidden></p>
    <p id="doneTxt">Θα σε περιμένει στο Campus Store.</p>
    <div class="sum" id="doneSum" style="text-align:start"></div>
    <button class="ghost" id="newBtn">Νέα παραγγελία</button>
@@ -313,6 +329,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 </div>
 
 <script src="firebase-config.js"></script>
+<script src="backend.js"></script>
 <script>
 {
 const FORM='https://docs.google.com/forms/d/e/1FAIpQLSfAw7LwrC6KE5d6tOb34ZENgIA9S87tzKIu-SmHJJx7KbBj3Q/formResponse';
@@ -439,55 +456,11 @@ $('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
  document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x===b));$('dateBox').hidden=pickup!=='other'});
 const tomorrow=new Date(Date.now()+864e5);$('date').min=tomorrow.toISOString().slice(0,10);
 
-/* ---------- accounts: Firebase, or a local demo backend for previews ---------- */
+/* ---------- accounts and order status (code in backend.js) ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let API=null,user=null,profile={};
-async function firebaseAPI(cfg){
- const B='https://www.gstatic.com/firebasejs/10.12.2/';
- const [{initializeApp},A,S]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
- const app=initializeApp(cfg),auth=A.getAuth(app),db=S.getFirestore(app);
- A.getRedirectResult(auth).catch(()=>{});
- const uref=()=>S.doc(db,'users',auth.currentUser.uid);
- return{
-  onChange:cb=>A.onAuthStateChanged(auth,u=>cb(u&&{uid:u.uid,email:u.email,name:u.displayName})),
-  google:async()=>{const p=new A.GoogleAuthProvider();try{await A.signInWithPopup(auth,p)}catch(e){if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment'].includes(e.code))return A.signInWithRedirect(auth,p);throw e}},
-  emailIn:(e,p)=>A.signInWithEmailAndPassword(auth,e,p),
-  emailUp:async(e,p,n)=>{const c=await A.createUserWithEmailAndPassword(auth,e,p);if(n)await A.updateProfile(c.user,{displayName:n})},
-  reset:e=>A.sendPasswordResetEmail(auth,e),
-  out:()=>A.signOut(auth),
-  getProfile:async()=>{const s=await S.getDoc(uref());return s.exists()?s.data():{}},
-  saveProfile:p=>S.setDoc(uref(),p,{merge:true}),
-  addOrder:o=>S.addDoc(S.collection(uref(),'orders'),{...o,createdAt:S.serverTimestamp()}),
-  listOrders:async()=>{const r=await S.getDocs(S.query(S.collection(uref(),'orders'),S.orderBy('createdAt','desc'),S.limit(30)));
-   return r.docs.map(d=>{const x=d.data();return{...x,at:x.createdAt?x.createdAt.toDate():new Date()}})},
-  del:async()=>{const r=await S.getDocs(S.collection(uref(),'orders'));await Promise.all(r.docs.map(d=>S.deleteDoc(d.ref)));await S.deleteDoc(uref());await A.deleteUser(auth.currentUser)}
- }
-}
-function demoAPI(){
- const db=ls.get('cs_demo')||{users:{},cur:null};const save=()=>ls.set('cs_demo',db);let cb=()=>{};
- const err=c=>{const e=new Error(c);e.code=c;return e};
- const emit=()=>{const u=db.cur&&db.users[db.cur];cb(u?{uid:db.cur,email:u.email,name:u.name}:null)};
- const me=()=>db.users[db.cur];
- return{
-  onChange:f=>{cb=f;setTimeout(emit,0)},
-  google:async()=>{const em='demo@gmail.com';if(!db.users[em])db.users[em]={email:em,name:'Δοκιμαστικός Χρήστης',pass:'',profile:{},orders:[]};db.cur=em;save();emit()},
-  emailIn:async(e,p)=>{const u=db.users[e];if(!u||u.pass!==p)throw err('auth/invalid-credential');db.cur=e;save();emit()},
-  emailUp:async(e,p,n)=>{if(!/^\S+@\S+\.\S+$/.test(e))throw err('auth/invalid-email');if(db.users[e])throw err('auth/email-already-in-use');if(p.length<6)throw err('auth/weak-password');db.users[e]={email:e,name:n,pass:p,profile:{},orders:[]};db.cur=e;save();emit()},
-  reset:async()=>{},
-  out:async()=>{db.cur=null;save();emit()},
-  getProfile:async()=>me().profile,
-  saveProfile:async p=>{Object.assign(me().profile,p);save()},
-  addOrder:async o=>{me().orders.unshift({...o,at:new Date().toISOString()});save()},
-  listOrders:async()=>me().orders.map(o=>({...o,at:new Date(o.at)})),
-  del:async()=>{delete db.users[db.cur];db.cur=null;save();emit()}
- }
-}
-const ERR={'auth/invalid-credential':'Λάθος email ή κωδικός.','auth/wrong-password':'Λάθος email ή κωδικός.','auth/user-not-found':'Λάθος email ή κωδικός.',
- 'auth/email-already-in-use':'Υπάρχει ήδη λογαριασμός με αυτό το email. Πάτα «Έχω ήδη λογαριασμό».','auth/weak-password':'Ο κωδικός θέλει τουλάχιστον 6 χαρακτήρες.',
- 'auth/invalid-email':'Το email δεν είναι σωστό.','auth/missing-password':'Γράψε τον κωδικό σου.','auth/popup-closed-by-user':'','auth/cancelled-popup-request':'',
- 'auth/network-request-failed':'Δεν υπάρχει σύνδεση στο ίντερνετ.','auth/too-many-requests':'Πολλές προσπάθειες. Δοκίμασε ξανά σε λίγο.',
- 'auth/unauthorized-domain':'Αυτή η διεύθυνση δεν έχει εγκριθεί στο Firebase (Authorized domains).','auth/requires-recent-login':'Για ασφάλεια, αποσυνδέσου, ξανασυνδέσου και δοκίμασε πάλι.'};
-const msg=e=>e&&e.code in ERR?ERR[e.code]:'Κάτι πήγε στραβά. Δοκίμασε ξανά.';
+let API=null,user=null,profile={},myOrders=[],unwatch=null;
+const msg=e=>CSBackend.msg(e),STATUS=CSBackend.STATUS;
+const real=()=>!!(user&&!user.anon); // signed in with email/Google (not a guest)
 
 /* ---------- sheet views ---------- */
 const VIEWS=['checkout','login','account','done','product'];
@@ -498,7 +471,7 @@ $('shade').addEventListener('click',closeSheet);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
 function openCheckout(){$('sum').innerHTML=summary(cart);$('err').textContent='';
- const me=user?{name:profile.name||user.name||'',phone:profile.phone||''}:(ls.get('cs_me')||{});
+ const saved=ls.get('cs_me')||{};const me=real()?{name:profile.name||user.name||saved.name||'',phone:profile.phone||saved.phone||''}:saved;
  $('name').value=me.name||'';$('phone').value=me.phone||'';show('checkout')}
 $('cartBtn').addEventListener('click',openCheckout);
 
@@ -515,7 +488,7 @@ $('authForm').addEventListener('submit',async e=>{
  $('aErr').textContent='';$('aOk').textContent='';
  if(signUp&&n.length<3)return $('aErr').textContent='Γράψε το ονοματεπώνυμό σου.';
  const b=$('authBtn');b.disabled=true;
- try{if(signUp){await API.emailUp(em,pw,n);await API.saveProfile({name:n});profile={...profile,name:n};paintAcct()}else await API.emailIn(em,pw)}catch(er){$('aErr').textContent=msg(er)}
+ try{if(signUp){await API.emailUp(em,pw,n);user={...user,anon:false,email:em,name:n};await API.saveProfile({name:n});profile={...profile,name:n};paintAcct();closeSheet()}else await API.emailIn(em,pw)}catch(er){$('aErr').textContent=msg(er)}
  b.disabled=false;
 });
 $('forgotBtn').addEventListener('click',async()=>{const em=$('aEmail').value.trim();$('aErr').textContent='';$('aOk').textContent='';
@@ -524,20 +497,40 @@ $('forgotBtn').addEventListener('click',async()=>{const em=$('aEmail').value.tri
 
 /* account */
 function fmtDate(d){return d.toLocaleDateString('el-GR',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})}
-let orders=[];
-async function openAccount(){
- if(!user)return openLogin(false);
+function stBadge(o){const st=STATUS[o.status]||STATUS.new;return `<span class="st ${st.c}">${st.t}</span>`}
+function itemsList(o){return ORDER.filter(id=>o.items&&o.items[id]).map(id=>`<li>${esc(VAR[id].n)} × ${o.items[id]}</li>`).join('')}
+function pickupTxt(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'}):''}
+function paintHistory(){
+ if($('account').hidden)return;
+ $('history').innerHTML=myOrders.length?myOrders.map((o,i)=>`<div class="order"><div class="when">${esc(fmtDate(o.at))}${o.code?` · #${esc(o.code)}`:''}<span>${esc(pickupTxt(o))}</span></div>
+  <div style="margin-top:6px">${stBadge(o)}</div>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+  <ul>${itemsList(o)}</ul>
+  <button class="again" data-i="${i}">Παράγγειλε ξανά</button></div>`).join(''):'<div class="empty">Δεν έχεις κάνει ακόμα παραγγελία με τον λογαριασμό σου.</div>';
+}
+function openAccount(){
+ if(!real())return openLogin(false);
  $('hello').textContent=`Γεια σου${profile.name||user.name?', '+(profile.name||user.name).split(' ')[0]:''}!`;
  $('meEmail').textContent=user.email||'';$('pName').value=profile.name||user.name||'';$('pPhone').value=profile.phone||'';
  $('pOk').textContent='';$('delErr').textContent='';delArm=false;$('delBtn').textContent='Διαγραφή λογαριασμού';
- $('history').innerHTML='<div class="empty">Φόρτωση…</div>';show('account');
- try{orders=await API.listOrders()}catch(e){orders=[];$('history').innerHTML=`<div class="empty">${esc(msg(e))}</div>`;return}
- $('history').innerHTML=orders.length?orders.map((o,i)=>`<div class="order"><div class="when">${esc(fmtDate(o.at))}<span>${o.pickup&&o.pickup!=='today'?'Παραλαβή '+esc(new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{day:'numeric',month:'short'})):''}</span></div>
-  <ul>${ORDER.filter(id=>o.items&&o.items[id]).map(id=>`<li>${esc(VAR[id].n)} × ${o.items[id]}</li>`).join('')}</ul>
-  <button class="again" data-i="${i}">Παράγγειλε ξανά</button></div>`).join(''):'<div class="empty">Δεν έχεις κάνει ακόμα παραγγελία με τον λογαριασμό σου.</div>';
+ show('account');paintHistory();
 }
-$('history').addEventListener('click',e=>{const b=e.target.closest('.again');if(!b)return;const o=orders[+b.dataset.i];
+$('history').addEventListener('click',e=>{const b=e.target.closest('.again');if(!b)return;const o=myOrders[+b.dataset.i];
  cart={};ORDER.forEach(id=>{if(o.items[id])cart[id]=Math.min(o.items[id],MAX)});render();openCheckout()});
+/* active orders strip on the main page (guests too) */
+function paintLive(){
+ const week=Date.now()-7*864e5;
+ const act=myOrders.filter(o=>o.status!=='done'&&o.at.getTime()>week);
+ $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σου</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
+  <p class="ldesc">${esc(st.d)}${pickupTxt(o)?' · '+esc(pickupTxt(o)):''}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+  <details><summary>${(n=>n===1?'1 τεμάχιο':n+' τεμάχια')(Object.values(o.items||{}).reduce((a,b)=>a+b,0))}</summary><ul>${itemsList(o)}</ul></details></div>`}).join(''):'';
+}
+let lastSt={};
+function onOrders(list){
+ if(!list)return;
+ // gentle buzz when an order becomes ready while the app is open
+ list.forEach(o=>{if(lastSt[o.id]&&lastSt[o.id]!==o.status&&(o.status==='ready'||o.status==='issue')&&navigator.vibrate)navigator.vibrate([120,60,120]);lastSt[o.id]=o.status});
+ myOrders=list;paintLive();paintHistory();
+}
 $('saveBtn').addEventListener('click',async()=>{const p={name:$('pName').value.trim(),phone:$('pPhone').value.trim()};
  try{await API.saveProfile(p);profile={...profile,...p};$('pOk').textContent='Τα στοιχεία αποθηκεύτηκαν.';paintAcct()}catch(e){$('pOk').textContent=msg(e)}});
 $('outBtn').addEventListener('click',async()=>{await API.out();closeSheet()});
@@ -545,13 +538,13 @@ let delArm=false;
 $('delBtn').addEventListener('click',async()=>{
  if(!delArm){delArm=true;$('delBtn').textContent='Πάτα ξανά για οριστική διαγραφή λογαριασμού και ιστορικού';return}
  try{await API.del();closeSheet()}catch(e){$('delErr').textContent=msg(e)}});
-$('acctBtn').addEventListener('click',()=>user?openAccount():openLogin(false));
+$('acctBtn').addEventListener('click',()=>real()?openAccount():openLogin(false));
 $('suggestBtn').addEventListener('click',()=>openLogin(false));
 
 function paintAcct(){
- const n=(user&&(profile.name||user.name||user.email))||'';
- $('acctBtn').classList.toggle('guest',!user);$('avTxt').textContent=user?(n.trim()[0]||'•').toUpperCase():'?';
- $('acctTxt').textContent=user?'Λογαριασμός':'Σύνδεση';
+ const r=real(),n=(r&&(profile.name||user.name||user.email))||'';
+ $('acctBtn').classList.toggle('guest',!r);$('avTxt').textContent=r?(n.trim()[0]||'•').toUpperCase():'?';
+ $('acctTxt').textContent=r?'Λογαριασμός':'Σύνδεση';
 }
 
 /* ---------- send order ---------- */
@@ -563,7 +556,9 @@ $('form').addEventListener('submit',async e=>{
  if(pickup==='other'&&!$('date').value)return $('err').textContent='Διάλεξε ημέρα παραλαβής.';
  if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκίμασε ξανά σε λίγο.';
  const userNotes=$('notes').value.trim();let notes=userNotes;
+ const code=API&&user?API.newCode():'';
  if(pickup==='other'){const d=new Date($('date').value+'T12:00');notes=`ΠΑΡΑΛΑΒΗ: ${d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'})}`+(notes?` — ${notes}`:'')}
+ if(code)notes=`#${code}`+(notes?` · ${notes}`:'');
  const p=new URLSearchParams();p.append(F.name,name);p.append(F.phone,phone);if(notes)p.append(F.notes,notes);
  ORDER.filter(id=>cart[id]).forEach(id=>p.append('entry.'+id,String(cart[id])));
  p.append('fvv','1');p.append('pageHistory','0');
@@ -573,14 +568,16 @@ $('form').addEventListener('submit',async e=>{
  }catch(err){$('err').textContent='Η παραγγελία δεν στάλθηκε. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.';btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';return}
  const sent={...cart};
  ls.set('cs_me',{name,phone});ls.set('cs_last',sent);
- if(user){ // history + remember details; the order itself is already in the form
-  try{await API.addOrder({items:sent,pickup:pickup==='other'?$('date').value:'today',notes:userNotes,name,phone})}catch(e){}
-  if(name!==profile.name||phone!==profile.phone){profile={...profile,name,phone};API.saveProfile({name,phone}).catch(()=>{});paintAcct()}
+ let tracked=false;
+ if(user){ // status tracking + history; the order itself is already in the form
+  try{await API.addOrder({code,items:sent,lines:ORDER.filter(id=>sent[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:sent[id]})),pickup:pickup==='other'?$('date').value:'today',notes:userNotes,name,phone});tracked=true}catch(e){}
+  if(real()&&(name!==profile.name||phone!==profile.phone)){profile={...profile,name,phone};API.saveProfile({name,phone}).catch(()=>{});paintAcct()}
  }
+ $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`Κωδικός παραγγελίας<b>#${esc(code)}</b>${tracked?'<small>Θα δεις εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
  $('doneSum').innerHTML=summary(sent);
  $('doneTxt').textContent=pickup==='other'?'Θα σε περιμένει στο Campus Store την ημέρα που διάλεξες.':'Θα σε περιμένει σήμερα στο Campus Store.';
  cart={};render();$('notes').value='';
- $('suggestBtn').hidden=!!user||!API;
+ $('suggestBtn').hidden=real()||!API;
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone;
  $('iosTip').classList.toggle('show',ios);
  show('done');btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';
@@ -620,20 +617,26 @@ render();
 
 /* start accounts (guest-only if no Firebase config) */
 (async()=>{
- const cfg=window.FIREBASE_CONFIG;
- try{
-  if(cfg==='demo'||location.hash==='#demo'){API=demoAPI();$('demoBar').hidden=false}
-  else if(cfg&&cfg.apiKey)API=await firebaseAPI(cfg);
- }catch(e){API=null}
+ try{API=await CSBackend.start()}catch(e){API=null}
  if(!API)return;
+ if(API.kind==='demo')$('demoBar').hidden=false;
  $('acctBtn').classList.add('show');
- let first=true;
+ let first=true,guestTried=false;
  API.onChange(async u=>{
-  user=u;profile={};
-  if(u){try{profile=await API.getProfile()||{}}catch(e){}ls.set('cs_welcomed',1);
-   if(!$('login').hidden&&$('sheet').classList.contains('open'))closeSheet()}
+  const was=real();user=u;profile={};
+  if(unwatch){unwatch();unwatch=null}
+  myOrders=[];lastSt={};paintLive();
+  if(!u){ // everyone gets a quiet guest identity so their order status can be shown
+   if(!guestTried){guestTried=true;API.guest().catch(()=>{})}
+  }else{
+   guestTried=false;
+   unwatch=API.watchMine(onOrders);
+   if(!u.anon){try{profile=await API.getProfile()||{}}catch(e){}ls.set('cs_welcomed',1);
+    if(!was&&!$('login').hidden&&$('sheet').classList.contains('open'))closeSheet()}
+  }
   paintAcct();
-  if(first){first=false;if(!u&&!ls.get('cs_welcomed')&&!$('sheet').classList.contains('open'))openLogin(true)}
+  if(first&&(!u||u.anon)){first=false;if(!ls.get('cs_welcomed')&&!$('sheet').classList.contains('open'))openLogin(true)}
+  else if(u)first=false;
  });
 })();
 }

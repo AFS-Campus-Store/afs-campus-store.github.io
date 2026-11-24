@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Campus Store · Προσωπικό</title>
+<meta name="theme-color" content="#1d4a2c">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm shop-floor tool, quick to scan
+   IDEA: the order spike at the counter — tickets you clear one by one
+   PICTURE: big order codes on ticket cards, colour = status
+   COLOUR and TYPE: same pasture green / milk / yolk as the app; Commissioner
+   LAYOUT: sticky top bar with tabs, ticket grid (1 column on phones) */
+:root{color-scheme:light dark;--bg:light-dark(#f4f1e8,#101a13);--card:light-dark(#fff,#18261c);--ink:light-dark(#18231b,#eef2ea);
+ --muted:light-dark(#5d6b60,#a3b2a6);--line:light-dark(#e4e0d3,#26382b);--green:#1d4a2c;--green2:light-dark(#2f6b40,#5fa06f);--yolk:#f3b52f;--yolk-ink:#2a1f00;--red:#c0392b}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Commissioner,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yolk);outline-offset:2px}
+.top{position:sticky;top:0;z-index:5;background:var(--green);color:#f4f1e8;padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.bar{display:flex;align-items:center;gap:12px;max-width:1300px;margin:0 auto;flex-wrap:wrap}
+.bar h1{font-size:20px;margin:0;font-weight:800;flex:1}
+.bar small{opacity:.8;font-size:13px}
+.out{border:1.5px solid rgba(244,241,232,.5);background:transparent;color:#f4f1e8;border-radius:999px;padding:6px 14px;min-height:40px;font-weight:600;font-size:14px}
+.tabs{display:flex;gap:6px;max-width:1300px;margin:10px auto 0;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;background:transparent;color:#cfe0d2;font-weight:600;padding:10px 14px;border-radius:12px 12px 0 0;min-height:44px}
+.tab.on{background:var(--bg);color:var(--ink)}
+.tab b{display:inline-block;min-width:22px;padding:0 6px;margin-left:6px;border-radius:999px;background:rgba(255,255,255,.18);font-size:13px}
+.tab.on b{background:var(--yolk);color:var(--yolk-ink)}
+main{max-width:1300px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left)) 40px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.tools input[type=search]{flex:1 1 220px;font-size:16px;border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:10px 14px;min-height:46px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);min-height:44px;white-space:nowrap}
+.chk input{width:20px;height:20px;accent-color:var(--green2)}
+@media(max-width:600px){.bar h1{font-size:17px}.bar h1 span{display:none}.bar small{display:none}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px;align-items:start}
+.t{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;position:relative}
+.t.new{border-color:var(--green2)}
+.t.fresh::before{content:"ΝΕΑ";position:absolute;top:-10px;right:14px;background:var(--red);color:#fff;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}
+.t.issue{border-color:var(--yolk)}
+.t.done{opacity:.75}
+.th{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.code{font-size:30px;font-weight:800;letter-spacing:.06em;line-height:1}
+.st{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;background:light-dark(#e8ece6,#2a3a2e)}
+.st.ready{background:#2f6b40;color:#fff}.st.issue{background:var(--yolk);color:var(--yolk-ink)}.st.done{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.who{margin:8px 0 2px;font-weight:600;font-size:17px}
+.meta{color:var(--muted);font-size:14px;display:flex;gap:4px 12px;flex-wrap:wrap}
+.meta a{color:var(--green2);font-weight:600;white-space:nowrap}
+.pick{display:inline-block;margin-top:8px;background:var(--yolk);color:var(--yolk-ink);font-weight:700;font-size:14px;border-radius:8px;padding:3px 10px}
+.items{list-style:none;margin:10px 0;padding:0;border-top:1px solid var(--line)}
+.items li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:16px}
+.items b{font-size:18px;white-space:nowrap}
+.cnote{background:light-dark(#f1efe7,#223427);border-radius:10px;padding:8px 12px;font-size:14px;margin:0 0 10px}
+textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 12px;min-height:44px;resize:vertical}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.acts button{border:0;border-radius:12px;min-height:48px;font-weight:700;font-size:15px}
+.b-ready{background:#2f6b40;color:#fff}.b-issue{background:var(--yolk);color:var(--yolk-ink)}
+.b-done{grid-column:1/-1;background:transparent;border:1.5px solid var(--line)!important;color:var(--ink)}
+.b-back{grid-column:1/-1;background:transparent;color:var(--muted);text-decoration:underline}
+.acts button:disabled{opacity:.5}
+.err{color:var(--red);font-size:14px;min-height:1em;margin-top:6px}
+.empty{color:var(--muted);text-align:center;padding:40px 16px;background:var(--card);border:1px dashed var(--line);border-radius:18px}
+.login{max-width:420px;margin:40px auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px}
+.login h2{margin:0 0 6px}
+.login p{color:var(--muted);margin:0 0 16px}
+.login input{width:100%;font-size:16px;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:12px 14px;min-height:48px;margin-bottom:10px}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1.5px solid var(--line);background:var(--card);border-radius:14px;min-height:52px;font-weight:600;margin-bottom:14px}
+.gbtn svg{width:20px;height:20px}
+.main{width:100%;border:0;border-radius:14px;background:var(--yolk);color:var(--yolk-ink);font-weight:800;min-height:52px}
+.link{border:0;background:none;color:var(--green2);font-weight:600;text-decoration:underline;padding:10px 0;min-height:44px}
+.demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
+@media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
+</style>
+</head>
+<body>
+<div class="demo" id="demoBar" hidden>Δοκιμαστική λειτουργία: τα δεδομένα μένουν μόνο σε αυτή τη συσκευή</div>
+<header class="top">
+ <div class="bar"><h1>Campus Store<span> · Παραγγελίες</span></h1><small id="who"></small><button class="out" id="outBtn" hidden>Αποσύνδεση</button></div>
+ <nav class="tabs" id="tabs" hidden>
+  <button class="tab on" data-t="active">Προς ετοιμασία<b id="n-active">0</b></button>
+  <button class="tab" data-t="ready">Έτοιμες<b id="n-ready">0</b></button>
+  <button class="tab" data-t="done">Παραλήφθηκαν<b id="n-done">0</b></button>
+ </nav>
+</header>
+
+<main>
+ <section class="login" id="login" hidden>
+  <h2>Σύνδεση προσωπικού</h2>
+  <p id="loginMsg">Μόνο για το προσωπικό του Campus Store.</p>
+  <button class="gbtn" id="googleBtn" type="button"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Σύνδεση με Google</button>
+  <form id="authForm" novalidate>
+   <input type="email" id="aEmail" placeholder="Email καταστήματος" autocomplete="email">
+   <input type="password" id="aPass" placeholder="Κωδικός" autocomplete="current-password">
+   <button class="main" type="submit" id="authBtn">Σύνδεση</button>
+  </form>
+  <button class="link" id="modeBtn" type="button">Πρώτη φορά; Δημιουργία κωδικού</button>
+  <div class="err" id="aErr"></div>
+ </section>
+
+ <section id="board" hidden>
+  <div class="tools">
+   <input type="search" id="q" placeholder="Αναζήτηση: κωδικός, όνομα ή τηλέφωνο" autocomplete="off">
+   <label class="chk"><input type="checkbox" id="sound"> Ήχος σε νέα παραγγελία</label>
+  </div>
+  <div class="grid" id="grid"></div>
+ </section>
+</main>
+
+<script src="firebase-config.js"></script>
+<script src="backend.js"></script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STATUS=CSBackend.STATUS,msg=e=>CSBackend.msg(e);
+let API=null,user=null,orders=[],tab='active',unwatch=null,seen=null,signUp=false;
+const drafts={}; // staff notes being typed, kept across live refreshes
+
+function fmtTime(d){const t=d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
+ return new Date().toDateString()===d.toDateString()?'Σήμερα '+t:d.toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'})+' '+t}
+function pick(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'}):''}
+function lines(o){if(o.lines&&o.lines.length)return o.lines;return Object.entries(o.items||{}).map(([id,q])=>({n:'Προϊόν '+id,q}))}
+
+function ticket(o){
+ const st=STATUS[o.status]||STATUS.new,fresh=o.status==='new'&&Date.now()-o.at<10*60e3;
+ const note=drafts[o.id]!==undefined?drafts[o.id]:(o.staffNote||'');
+ const tel=String(o.phone||'').replace(/[^\d+]/g,'');
+ return `<article class="t ${st.c}${fresh?' fresh':''}" data-id="${esc(o.id)}">
+  <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}</span></div>
+  <div class="who">${esc(o.name)}</div>
+  <div class="meta"><span>${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
+  ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}
+  <ul class="items">${lines(o).map(l=>`<li><span>${esc(l.n)}</span><b>× ${esc(l.q)}</b></li>`).join('')}</ul>
+  ${o.notes?`<p class="cnote"><b>Σχόλιο πελάτη:</b> ${esc(o.notes)}</p>`:''}
+  ${o.status==='done'?'':`<textarea class="note" placeholder="Σημείωμα για τον πελάτη (π.χ. τι λείπει)">${esc(note)}</textarea>`}
+  <div class="acts">${o.status==='done'
+   ?`<button class="b-back" data-s="ready">Επαναφορά στις έτοιμες</button>`
+   :`<button class="b-ready" data-s="ready"${o.status==='ready'?' disabled':''}>✓ Έτοιμη</button><button class="b-issue" data-s="issue">⚠ Λείπει κάτι</button><button class="b-done" data-s="done">Παραλήφθηκε</button>`}</div>
+  <div class="err"></div></article>`;
+}
+
+function paint(){
+ const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
+ const two=Date.now()-2*864e5;
+ const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&(o.upd||o.at)>two)};
+ for(const k in groups)$('n-'+k).textContent=groups[k].length;
+ let list=groups[tab];
+ if(q)list=orders.filter(o=>[o.code,o.name,o.phone].some(v=>String(v||'').toLowerCase().includes(q)));
+ list=[...list].sort((a,b)=>tab==='done'&&!q?(b.upd||b.at)-(a.upd||a.at):a.at-b.at); // oldest first to prepare
+ const focus=document.activeElement&&document.activeElement.classList.contains('note')?document.activeElement.closest('.t').dataset.id:null;
+ $('grid').innerHTML=list.length?list.map(ticket).join(''):`<div class="empty">${q?'Δεν βρέθηκε παραγγελία.':tab==='active'?'Καμία παραγγελία σε αναμονή.':tab==='ready'?'Καμία έτοιμη παραγγελία.':'Καμία παραλαβή τις τελευταίες 2 ημέρες.'}</div>`;
+ if(focus){const t=$('grid').querySelector(`[data-id="${CSS.escape(focus)}"] .note`);if(t){t.focus();t.selectionStart=t.selectionEnd=t.value.length}}
+ const waiting=groups.active.length;document.title=(waiting?`(${waiting}) `:'')+'Campus Store · Προσωπικό';
+}
+
+function beep(){if(!$('sound').checked)return;try{const a=new (window.AudioContext||window.webkitAudioContext)();[0,.18].forEach(t=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g).connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+.12)})}catch(e){}}
+
+function onList(list){
+ if(seen){const fresh=list.filter(o=>!seen.has(o.id));if(fresh.length)beep()}
+ seen=new Set(list.map(o=>o.id));orders=list;paint();
+}
+
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));paint()});
+$('q').addEventListener('input',paint);
+$('grid').addEventListener('input',e=>{if(e.target.classList.contains('note'))drafts[e.target.closest('.t').dataset.id]=e.target.value});
+$('grid').addEventListener('click',async e=>{
+ const b=e.target.closest('.acts button');if(!b)return;
+ const t=b.closest('.t'),id=t.dataset.id,s=b.dataset.s,ta=t.querySelector('.note'),note=ta?ta.value.trim():'';
+ if(s==='issue'&&!note){t.querySelector('.err').textContent='Γράψε στο σημείωμα τι λείπει, για να το δει ο πελάτης.';ta&&ta.focus();return}
+ t.querySelectorAll('button').forEach(x=>x.disabled=true);
+ try{await API.setStatus(id,s,s==='done'?(orders.find(o=>o.id===id)||{}).staffNote||note:note);delete drafts[id]}
+ catch(er){t.querySelector('.err').textContent=msg(er);t.querySelectorAll('button').forEach(x=>x.disabled=false)}
+});
+$('sound').addEventListener('change',()=>{try{localStorage.setItem('cs_staff_sound',$('sound').checked?'1':'')}catch(e){};beep()});
+try{$('sound').checked=!!localStorage.getItem('cs_staff_sound')}catch(e){}
+
+/* sign-in */
+function showLogin(m){$('login').hidden=false;$('board').hidden=true;$('tabs').hidden=true;$('outBtn').hidden=!user||user.anon;$('who').textContent='';if(m!==undefined)$('loginMsg').textContent=m}
+function showBoard(){$('login').hidden=true;$('board').hidden=false;$('tabs').hidden=false;$('outBtn').hidden=false;$('who').textContent=user.email||''}
+async function clearGuest(){if(user&&user.anon)await API.out()}
+$('googleBtn').addEventListener('click',async()=>{$('aErr').textContent='';try{await clearGuest();await API.google()}catch(e){$('aErr').textContent=msg(e)}});
+$('modeBtn').addEventListener('click',()=>{signUp=!signUp;$('authBtn').textContent=signUp?'Δημιουργία κωδικού':'Σύνδεση';$('modeBtn').textContent=signUp?'Έχω ήδη κωδικό':'Πρώτη φορά; Δημιουργία κωδικού';$('aErr').textContent=''});
+$('authForm').addEventListener('submit',async e=>{e.preventDefault();$('aErr').textContent='';
+ const em=$('aEmail').value.trim(),pw=$('aPass').value;
+ try{await clearGuest();if(signUp){await API.emailUp(em,pw,'');await API.verify();showLogin('Σου στείλαμε email επιβεβαίωσης. Πάτα το λινκ του και μετά ανανέωσε αυτή τη σελίδα.')}else await API.emailIn(em,pw)}
+ catch(er){$('aErr').textContent=msg(er)}});
+$('outBtn').addEventListener('click',()=>API.out());
+
+(async()=>{
+ try{API=await CSBackend.start()}catch(e){API=null}
+ if(!API){showLogin('Το Firebase δεν έχει ρυθμιστεί (firebase-config.js).');$('googleBtn').hidden=$('authForm').hidden=$('modeBtn').hidden=true;return}
+ if(API.kind==='demo')$('demoBar').hidden=false;
+ API.onChange(u=>{
+  user=u;if(unwatch){unwatch();unwatch=null}seen=null;orders=[];
+  if(!u||u.anon)return showLogin('Μόνο για το προσωπικό του Campus Store.');
+  if(API.kind!=='demo'&&!u.verified)return showLogin(`Το ${u.email} δεν έχει επιβεβαιωθεί ακόμα. Πάτα το λινκ στο email επιβεβαίωσης και ανανέωσε τη σελίδα.`);
+  showBoard();$('grid').innerHTML='<div class="empty">Φόρτωση…</div>';
+  unwatch=API.watchAll(onList,e=>{if(unwatch){unwatch();unwatch=null}showLogin(e&&e.code==='permission-denied'?`Ο λογαριασμός ${u.email} δεν έχει πρόσβαση στις παραγγελίες.`:msg(e))});
+ });
+ setInterval(()=>{if(!$('board').hidden&&!(document.activeElement&&document.activeElement.classList.contains('note')))paint()},60e3); // refresh "ΝΕΑ" labels
+})();
+}
+</script>
+</body>
+</html>
