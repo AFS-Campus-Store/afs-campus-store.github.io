@@ -319,7 +319,7 @@ wine:'<path d="M22 4h8v12c0 3 6 5 6 12v20a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3V28c0-7 
 
 const CATS=[
 {id:'dairy',name:'Γαλακτοκομικά',items:[
- {p:'gala',t:'Φρέσκο γάλα 1 λίτρου',a:'milk',v:[['1672897693','Πλήρες','gala'],['979999890','Ελαφρύ','gala-elafry']]},
+ {p:'gala-duo',t:'Φρέσκο γάλα 1 λίτρου',a:'milk',v:[['1672897693','Πλήρες','gala'],['979999890','Ελαφρύ','gala-elafry']]},
  {p:'giaourti',t:'Παραδοσιακό γιαούρτι από φρέσκο γάλα',s:'220 g',a:'pot',v:[['1630674149','Ποσότητα']]},
  {p:'straggisto',t:'Στραγγιστό γιαούρτι',a:'pot',v:[['774194173','5% λιπαρά · 500 g','straggisto-5-500'],['822471796','2% λιπαρά · 500 g','straggisto-2-500'],['1208184959','5% λιπαρά · 180 g','straggisto-5-180'],['1301296005','2% λιπαρά · 180 g','straggisto-2-180']]},
  {p:'voutyro',t:'Φρέσκο αγελαδινό βούτυρο',s:'περίπου 400 g',a:'butter',v:[['1515649095','Τεμάχιο']]}]},
@@ -331,7 +331,7 @@ const CATS=[
  {p:'avga-axyrona',t:'Αυγά Ω3 «Αχυρώνα»',a:'eggs',v:[['945325429','Εξάδα μεσαία · 53–63 g','avga-axyrona'],['901308117','Εξάδα μεγάλα · 63–73 g','avga-axyrona-megala']]},
  {p:'avga-klovostoixias',t:'Αυγά Ω3 «Κλωβοστοιχίας»',a:'eggs2',v:[['913176482','Εξάδα μεσαία · 53–63 g'],['1124247424','Εξάδα μεγάλα · 63–73 g']]}]},
 {id:'pasta',name:'Ζυμαρικά',items:[
- {p:'zymarika',t:'',s:'συσκευασία 500 g',a:'pasta',v:[['1625302866','Χυλοπίτες','zymarika'],['1164333084','Τραχανάς γλυκός','trachanas'],['494482544','Κριθαράκι'],['1847568384','Κους κους']]}]},
+ {p:'',t:'',s:'συσκευασία 500 g',a:'pasta',v:[['1625302866','Χυλοπίτες','zymarika'],['1164333084','Τραχανάς γλυκός','trachanas'],['494482544','Κριθαράκι'],['1847568384','Κους κους']]}]},
 {id:'wine',name:'Κρασί',items:[
  {p:'xinomavro',t:'Ξινόμαυρο',s:'φιάλη 750 ml',a:'wine',v:[['1428563921','Φιάλες']]}]}
 ];
@@ -357,7 +357,7 @@ const $=id=>document.getElementById(id);
 
 $('chips').innerHTML=CATS.map((c,i)=>`<button class="chip${i?'':' on'}" data-c="${c.id}">${c.name}</button>`).join('');
 $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.items.map(it=>`
- <div class="card" data-item="${ITEMS.indexOf(it)}"><div class="head"><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg><img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()"></div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div></div>
+ <div class="card" data-item="${ITEMS.indexOf(it)}"><div class="head"><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div></div>
  ${it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('')}
  </div>`).join('')}</section>`).join('');
 
@@ -388,7 +388,7 @@ function photoOf(it,vid){const v=vid&&it.v.find(x=>x[0]===vid);return (v&&v[2])|
 function select(vid){
  const it=curItem;curVar=vid;const ph=photoOf(it,vid);
  $('pdImg').innerHTML=`<svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>`;
- const im=new Image();im.alt='';im.onload=()=>{$('pdImg').innerHTML='';$('pdImg').appendChild(im)};im.src=ph+'.jpg';
+ if(ph){const im=new Image();im.alt='';im.onload=()=>{$('pdImg').innerHTML='';$('pdImg').appendChild(im)};im.src=ph+'.jpg'}
  $('pdThumbs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v||null)===(vid&&photoOf(it,vid)!==it.p?vid:null)));
  $('pdRows').querySelectorAll('.row').forEach(r=>r.classList.toggle('sel',r.dataset.id===vid&&it.v.length>1));
  const v=vid&&it.v.find(x=>x[0]===vid);
@@ -406,7 +406,7 @@ function renderInfo(inf){
 }
 function openProduct(it,vid){
  curItem=it;
- const opts=[['',it.p],...it.v.filter(v=>v[2]&&v[2]!==it.p).map(v=>[v[0],v[2]])];
+ const opts=[['',it.p],...it.v.filter(v=>v[2]&&v[2]!==it.p).map(v=>[v[0],v[2]])].filter(o=>o[1]);
  $('pdThumbs').innerHTML=opts.length>1?opts.map(([v,p])=>`<button type="button" data-v="${v}" aria-label="Φωτογραφία"><img src="${p}.jpg" alt="" onerror="this.parentNode.remove()"></button>`).join(''):'';
  $('pdTitle').textContent=it.t||it.cat;
  $('pdRows').innerHTML=it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('');
