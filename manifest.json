@@ -1,6 +1,6 @@
 {
-  "name": "Campus Store",
-  "short_name": "Campus Store",
+  "name": "CampusStoreApp",
+  "short_name": "CampusStoreApp",
   "description": "Παραγγελίες προϊόντων Campus Store για παραλαβή",
   "lang": "el",
   "start_url": "./",
