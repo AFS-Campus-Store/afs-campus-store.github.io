@@ -125,14 +125,19 @@ h2{font-size:20px;line-height:1.2;margin:0 0 10px;font-weight:800}
 .head{display:flex;gap:14px;align-items:center;padding:14px 14px 8px}
 .pic{flex:none;position:relative;width:64px;height:64px;border-radius:14px;background:light-dark(#eef3ea,#213326);display:grid;place-items:center;overflow:hidden}
 .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.card.photo .pic{width:88px;height:88px}
+.card .head .pic{width:88px;height:88px}
+.card .head .pic svg{width:62px;height:62px}
 .pic svg{width:52px;height:52px}
 .head h3{margin:0;font-size:17px;line-height:1.25;font-weight:600}
 .head small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;border-top:1px solid var(--line);min-height:60px}
 .row:first-of-type{border-top:0}
 .row .lbl{font-size:15px;display:flex;align-items:center;gap:10px}
-.th{width:44px;height:44px;border-radius:10px;object-fit:cover;background:#fff;border:1px solid var(--line);flex:none}
+.th{position:relative;width:44px;height:44px;border-radius:10px;background:#fff;border:1px solid var(--line);flex:none;overflow:hidden;display:grid;place-items:center}
+.th svg{width:34px;height:34px}
+.th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+.card.nohead>.head{display:none}
+.card.nohead>.row:first-of-type{border-top:0}
 .pic:has(img){background:#fff}
 .row.has .lbl{font-weight:600}
 .step{display:flex;align-items:center;flex:none;border-radius:999px;background:light-dark(#f1efe7,#223427)}
@@ -339,9 +344,9 @@ const CATS=[
  {p:'tyri-trimma',t:'Ημίσκληρο τυρί σε τρίμμα',s:'4μηνης ωρίμανσης',a:'grated',v:[['6610654','Τεμάχια']]}]},
 {id:'eggs',name:'Αυγά',items:[
  {p:'avga-axyrona',t:'Αυγά Ω3 «Αχυρώνα»',a:'eggs',v:[['945325429','Εξάδα μεσαία · 53–63 g','avga-axyrona'],['901308117','Εξάδα μεγάλα · 63–73 g','avga-axyrona-megala']]},
- {p:'avga-klovostoixias',t:'Αυγά Ω3 «Κλωβοστοιχίας»',a:'eggs2',v:[['913176482','Εξάδα μεσαία · 53–63 g'],['1124247424','Εξάδα μεγάλα · 63–73 g']]}]},
+ {p:'avga-klovostoixias',t:'Αυγά Ω3 «Κλωβοστοιχίας»',a:'eggs2',v:[['913176482','Εξάδα μεσαία · 53–63 g','avga-klovostoixias-mesaia'],['1124247424','Εξάδα μεγάλα · 63–73 g','avga-klovostoixias-megala']]}]},
 {id:'pasta',name:'Ζυμαρικά',items:[
- {p:'',t:'',s:'συσκευασία 500 g',a:'pasta',v:[['1625302866','Χυλοπίτες','zymarika'],['1164333084','Τραχανάς γλυκός','trachanas'],['494482544','Κριθαράκι'],['1847568384','Κους κους']]}]},
+ {p:'',t:'',a:'pasta',v:[['1625302866','Χυλοπίτες · 500 g','zymarika'],['1164333084','Τραχανάς γλυκός · 500 g','trachanas'],['494482544','Κριθαράκι · 500 g'],['1847568384','Κους κους · 500 g']]}]},
 {id:'wine',name:'Κρασί',items:[
  {p:'xinomavro',t:'Ξινόμαυρο',s:'φιάλη 750 ml',a:'wine',v:[['1428563921','Φιάλες']]}]}
 ];
@@ -353,7 +358,7 @@ const VAR={},ORDER=[];CATS.forEach(c=>c.items.forEach(it=>it.v.forEach(([id,l])=
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cart=ls.get('cs_cart')||{};
 function stepHTML(l){return `<div class="step"><button class="minus" aria-label="Λιγότερα ${l}">−</button><output aria-live="polite">0</output><button class="plus" aria-label="Περισσότερα ${l}">+</button></div>`}
-function rowHTML(id,l,ph){return `<div class="row" data-id="${id}"><span class="lbl">${ph?`<img class="th" src="${ph}.jpg" alt="" loading="lazy" data-ph="${ph}" onerror="this.remove()">`:''}<span>${l}</span></span>${stepHTML(l)}</div>`}
+function rowHTML(id,l,ph,it){const p=ph||(it&&it.p);const pic=p?`<img src="${p}.jpg" alt="" loading="lazy" onerror="this.remove()">`:'';return `<div class="row" data-id="${id}"><span class="lbl"><span class="th ic">${it?`<svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>`:''}${pic}</span><span>${l}</span></span>${stepHTML(l)}</div>`}
 const solo=it=>it.v.length===1&&GENERIC.includes(it.v[0][1]);
 const ITEMS=[];CATS.forEach(c=>c.items.forEach(it=>{it.cat=c.name;ITEMS.push(it)}));
 /* Product info shown in the pop-up.
@@ -369,8 +374,8 @@ const $=id=>document.getElementById(id);
 
 $('chips').innerHTML=CATS.map((c,i)=>`<button class="chip${i?'':' on'}" data-c="${c.id}">${c.name}</button>`).join('');
 $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.items.map(it=>`
- <div class="card${solo(it)?' solo':''}" data-item="${ITEMS.indexOf(it)}"><div class="head${solo(it)?' row':''}"${solo(it)?` data-id="${it.v[0][0]}"`:''}><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div>${solo(it)?stepHTML(it.t):''}</div>
- ${solo(it)?'':it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('')}
+ <div class="card${solo(it)?' solo':''}${!it.t&&!it.s&&!it.p?' nohead':''}" data-item="${ITEMS.indexOf(it)}"><div class="head${solo(it)?' row':''}"${solo(it)?` data-id="${it.v[0][0]}"`:''}><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div>${solo(it)?stepHTML(it.t):''}</div>
+ ${solo(it)?'':it.v.map(([id,l,ph])=>rowHTML(id,l,ph,it)).join('')}
  </div>`).join('')}</section>`).join('');
 
 function count(){return Object.values(cart).reduce((a,b)=>a+b,0)}
@@ -421,7 +426,7 @@ function openProduct(it,vid){
  const opts=[['',it.p],...it.v.filter(v=>v[2]&&v[2]!==it.p).map(v=>[v[0],v[2]])].filter(o=>o[1]);
  $('pdThumbs').innerHTML=opts.length>1?opts.map(([v,p])=>`<button type="button" data-v="${v}" aria-label="Φωτογραφία"><img src="${p}.jpg" alt="" onerror="this.parentNode.remove()"></button>`).join(''):'';
  $('pdTitle').textContent=it.t||it.cat;
- $('pdRows').innerHTML=it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('');
+ $('pdRows').innerHTML=it.v.map(([id,l,ph])=>rowHTML(id,l,ph,it)).join('');
  render();show('product');select(vid||(it.v.length===1?it.v[0][0]:null));
 }
 $('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b)$('c-'+b.dataset.c).scrollIntoView({behavior:'smooth'})});
