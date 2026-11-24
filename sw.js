@@ -1,6 +1,6 @@
 // Campus Store — service worker: keeps the app shell available offline.
 // Change VERSION whenever you upload new files, so phones pick up the update.
-const VERSION = 'campus-store-v6';
+const VERSION = 'campus-store-v7';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'firebase-config.js'];
 
 self.addEventListener('install', e => {
