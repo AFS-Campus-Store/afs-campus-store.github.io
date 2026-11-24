@@ -100,6 +100,11 @@ h4{font-size:15px;margin:22px 0 4px}
 .facts li{padding:8px 0;border-top:1px solid var(--line);font-size:15px}
 .facts li:first-child{border-top:0}
 .facts b{display:block;font-size:13px;color:var(--muted);font-weight:600}
+.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top) - 52px);z-index:30;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);color:var(--green2);box-shadow:0 4px 14px rgba(0,0,0,.2);display:grid;place-items:center;font-size:24px;font-weight:800;pointer-events:none;opacity:0}
+.ptr.ready{background:var(--yolk);color:var(--yolk-ink)}
+.ptr.spin span{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (display-mode:standalone){html,body{overscroll-behavior-y:contain}}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -187,6 +192,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 </head>
 <body>
 
+<div class="ptr" id="ptr" aria-hidden="true"><span>↻</span></div>
 <div class="demo" id="demoBar" hidden>Δοκιμαστική λειτουργία: οι λογαριασμοί μένουν μόνο σε αυτή τη συσκευή</div>
 <header class="hero">
  <button class="acct guest" id="acctBtn"><span class="av" id="avTxt">?</span><span id="acctTxt">Σύνδεση</span></button>
@@ -579,7 +585,31 @@ $('newBtn').addEventListener('click',()=>{closeSheet();scrollTo({top:0,behavior:
 let deferred;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('installBtn').classList.add('show')});
 $('installBtn').addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;$('installBtn').classList.remove('show')});
-if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+ const hadSW=!!navigator.serviceWorker.controller;let reloaded=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadSW&&!reloaded){reloaded=true;location.reload()}}); // new version installed -> show it
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+  reg.update().catch(()=>{});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})}); // check again when the app is reopened
+ }).catch(()=>{});
+}
+
+/* pull down from the top to refresh (installed app only; the browser has its own) */
+{
+ const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+ const ptr=$('ptr'),TH=80;let y0=null,d=0,busy=false;
+ const paint=()=>{const p=Math.min(d,TH*1.4);ptr.style.transform=`translateY(${p}px)`;ptr.style.opacity=Math.min(1,d/40);
+  ptr.firstChild.style.transform=`rotate(${d*3}deg)`;ptr.classList.toggle('ready',d>=TH)};
+ if(standalone){
+  addEventListener('touchstart',e=>{if(busy||scrollY>0||$('sheet').classList.contains('open'))return;y0=e.touches[0].clientY;d=0},{passive:true});
+  addEventListener('touchmove',e=>{if(y0===null)return;d=Math.max(0,(e.touches[0].clientY-y0)*.5);if(scrollY>0){y0=null;d=0}paint()},{passive:true});
+  addEventListener('touchend',async()=>{if(y0===null)return;y0=null;
+   if(d>=TH){busy=true;ptr.classList.add('spin');ptr.style.transform=`translateY(${TH}px)`;
+    try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update()}catch(e){}
+    setTimeout(()=>location.reload(),300)}
+   else{d=0;ptr.style.transition='transform .2s,opacity .2s';paint();setTimeout(()=>ptr.style.transition='',220)}});
+ }
+}
 
 render();
 
