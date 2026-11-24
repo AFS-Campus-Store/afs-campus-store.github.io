@@ -73,6 +73,10 @@ h4{font-size:15px;margin:22px 0 4px}
 .danger{border:0;background:none;color:var(--red);font-weight:600;min-height:44px;padding:0;margin-top:6px}
 .head .more{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;color:var(--green2)}
 .head .pic,.head h3,.lbl{cursor:pointer}
+.head.row{border-top:0;padding:14px;min-height:0;justify-content:flex-start;gap:10px 14px;flex-wrap:wrap}
+.head.row>div:nth-child(2){flex:1 1 150px}
+.head.row .step{align-self:center;margin-left:auto}
+.head .more{white-space:nowrap}
 .row.sel{background:light-dark(#eef5ea,#203426)}
 .row.sel .lbl{font-weight:700}
 .pd-img{position:relative;width:100%;aspect-ratio:1;max-height:min(360px,42vh);margin:4px auto 14px;border-radius:18px;background:#fff;border:1px solid var(--line);overflow:hidden;display:grid;place-items:center}
@@ -342,7 +346,9 @@ const GENERIC=['Ποσότητα','Τεμάχια','Τεμάχιο','Φιάλε�
 const VAR={},ORDER=[];CATS.forEach(c=>c.items.forEach(it=>it.v.forEach(([id,l])=>{VAR[id]={id,l,t:it.t,n:GENERIC.includes(l)||!it.t?(it.t||l):it.t+' — '+l};ORDER.push(id)})));
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let cart=ls.get('cs_cart')||{};
-function rowHTML(id,l,ph){return `<div class="row" data-id="${id}"><span class="lbl">${ph?`<img class="th" src="${ph}.jpg" alt="" loading="lazy" data-ph="${ph}" onerror="this.remove()">`:''}<span>${l}</span></span><div class="step"><button class="minus" aria-label="Λιγότερα ${l}">−</button><output aria-live="polite">0</output><button class="plus" aria-label="Περισσότερα ${l}">+</button></div></div>`}
+function stepHTML(l){return `<div class="step"><button class="minus" aria-label="Λιγότερα ${l}">−</button><output aria-live="polite">0</output><button class="plus" aria-label="Περισσότερα ${l}">+</button></div>`}
+function rowHTML(id,l,ph){return `<div class="row" data-id="${id}"><span class="lbl">${ph?`<img class="th" src="${ph}.jpg" alt="" loading="lazy" data-ph="${ph}" onerror="this.remove()">`:''}<span>${l}</span></span>${stepHTML(l)}</div>`}
+const solo=it=>it.v.length===1&&GENERIC.includes(it.v[0][1]);
 const ITEMS=[];CATS.forEach(c=>c.items.forEach(it=>{it.cat=c.name;ITEMS.push(it)}));
 /* Product info shown in the pop-up.
    Key = the option's code (the number in v:[['code','label',...]]), e.g. '1301296005' = Στραγγιστό 2% 180 g.
@@ -357,8 +363,8 @@ const $=id=>document.getElementById(id);
 
 $('chips').innerHTML=CATS.map((c,i)=>`<button class="chip${i?'':' on'}" data-c="${c.id}">${c.name}</button>`).join('');
 $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.items.map(it=>`
- <div class="card" data-item="${ITEMS.indexOf(it)}"><div class="head"><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div></div>
- ${it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('')}
+ <div class="card${solo(it)?' solo':''}" data-item="${ITEMS.indexOf(it)}"><div class="head${solo(it)?' row':''}"${solo(it)?` data-id="${it.v[0][0]}"`:''}><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div>${solo(it)?stepHTML(it.t):''}</div>
+ ${solo(it)?'':it.v.map(([id,l,ph])=>rowHTML(id,l,ph)).join('')}
  </div>`).join('')}</section>`).join('');
 
 function count(){return Object.values(cart).reduce((a,b)=>a+b,0)}
