@@ -129,6 +129,7 @@ h4{font-size:15px;margin:22px 0 4px}
 .cxl{margin-top:8px;border:0;background:none;color:var(--red);font-weight:600;font-size:14px;padding:6px 0;min-height:40px;text-decoration:underline;text-underline-offset:3px}
 .cxl.arm{background:var(--red);color:#fff;text-decoration:none;border-radius:10px;padding:6px 14px}
 .cerr{display:block;color:var(--red);font-size:13px}
+#login.welcome [data-close]{display:none}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -488,10 +489,12 @@ const real=()=>!!(user&&!user.anon); // signed in with email/Google (not a guest
 /* ---------- sheet views ---------- */
 const VIEWS=['checkout','login','account','done','product'];
 function show(v){VIEWS.forEach(x=>$(x).hidden=x!==v);$('sheet').classList.add('open');document.body.style.overflow='hidden';$('sheet').querySelector('.panel').scrollTop=0}
-function closeSheet(){$('sheet').classList.remove('open');document.body.style.overflow=''}
-document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeSheet));
-$('shade').addEventListener('click',closeSheet);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+let welcome=false; // first-visit screen: must pick sign-in or guest, no ✕
+function closeSheet(){welcome=false;$('login').classList.remove('welcome');$('sheet').classList.remove('open');document.body.style.overflow=''}
+function tryClose(){if(!welcome)closeSheet()}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',tryClose));
+$('shade').addEventListener('click',tryClose);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')tryClose()});
 
 function openCheckout(){$('sum').innerHTML=summary(cart);$('err').textContent='';
  const saved=ls.get('cs_me')||{};const me=real()?{name:profile.name||user.name||saved.name||'',phone:profile.phone||saved.phone||''}:saved;
@@ -502,7 +505,7 @@ $('cartBtn').addEventListener('click',openCheckout);
 let signUp=false;
 function setMode(up){signUp=up;$('nameBox').hidden=!up;$('authBtn').textContent=up?'Δημιουργία λογαριασμού':'Σύνδεση';
  $('modeBtn').textContent=up?'Έχω ήδη λογαριασμό':'Δεν έχω λογαριασμό';$('aPass').autocomplete=up?'new-password':'current-password';$('aErr').textContent='';$('aOk').textContent=''}
-function openLogin(first){setMode(false);$('loginTitle').textContent=first?'Καλώς ήρθατε':'Σύνδεση';show('login')}
+function openLogin(first){setMode(false);$('loginTitle').textContent=first?'Καλώς ήρθατε':'Σύνδεση';show('login');welcome=!!first;$('login').classList.toggle('welcome',!!first)}
 $('modeBtn').addEventListener('click',()=>setMode(!signUp));
 $('guestBtn').addEventListener('click',()=>{ls.set('cs_welcomed',1);closeSheet()});
 $('googleBtn').addEventListener('click',async()=>{$('aErr').textContent='';try{await API.google()}catch(e){$('aErr').textContent=msg(e)}});
