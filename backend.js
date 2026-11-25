@@ -115,22 +115,22 @@
 
   const ERR = {
     'auth/invalid-credential': 'Λάθος email ή κωδικός.', 'auth/wrong-password': 'Λάθος email ή κωδικός.', 'auth/user-not-found': 'Λάθος email ή κωδικός.',
-    'auth/email-already-in-use': 'Υπάρχει ήδη λογαριασμός με αυτό το email. Πάτα «Έχω ήδη λογαριασμό».',
-    'auth/credential-already-in-use': 'Υπάρχει ήδη λογαριασμός με αυτό το email. Πάτα «Έχω ήδη λογαριασμό».',
+    'auth/email-already-in-use': 'Υπάρχει ήδη λογαριασμός με αυτό το email. Πατήστε «Έχω ήδη λογαριασμό».',
+    'auth/credential-already-in-use': 'Υπάρχει ήδη λογαριασμός με αυτό το email. Πατήστε «Έχω ήδη λογαριασμό».',
     'auth/weak-password': 'Ο κωδικός θέλει τουλάχιστον 6 χαρακτήρες.', 'auth/invalid-email': 'Το email δεν είναι σωστό.',
-    'auth/missing-password': 'Γράψε τον κωδικό σου.', 'auth/popup-closed-by-user': '', 'auth/cancelled-popup-request': '',
-    'auth/network-request-failed': 'Δεν υπάρχει σύνδεση στο ίντερνετ.', 'auth/too-many-requests': 'Πολλές προσπάθειες. Δοκίμασε ξανά σε λίγο.',
+    'auth/missing-password': 'Γράψτε τον κωδικό σας.', 'auth/popup-closed-by-user': '', 'auth/cancelled-popup-request': '',
+    'auth/network-request-failed': 'Δεν υπάρχει σύνδεση στο ίντερνετ.', 'auth/too-many-requests': 'Πολλές προσπάθειες. Δοκιμάστε ξανά σε λίγο.',
     'auth/unauthorized-domain': 'Αυτή η διεύθυνση δεν έχει εγκριθεί στο Firebase (Authorized domains).',
-    'auth/requires-recent-login': 'Για ασφάλεια, αποσυνδέσου, ξανασυνδέσου και δοκίμασε πάλι.',
+    'auth/requires-recent-login': 'Για ασφάλεια, αποσυνδεθείτε, συνδεθείτε ξανά και δοκιμάστε πάλι.',
     'auth/admin-restricted-operation': 'Η σύνδεση επισκέπτη δεν είναι ενεργή στο Firebase (Anonymous).',
-    'permission-denied': 'Δεν έχεις δικαίωμα πρόσβασης.'
+    'permission-denied': 'Δεν έχετε δικαίωμα πρόσβασης.'
   };
-  const msg = e => (e && e.code in ERR) ? ERR[e.code] : 'Κάτι πήγε στραβά. Δοκίμασε ξανά.';
+  const msg = e => (e && e.code in ERR) ? ERR[e.code] : 'Κάτι πήγε στραβά. Δοκιμάστε ξανά.';
 
   const STATUS = {
-    new: { t: 'Καταχωρήθηκε', d: 'Η παραγγελία σου ετοιμάζεται.', c: 'new' },
-    ready: { t: 'Έτοιμη για παραλαβή', d: 'Σε περιμένει στο Campus Store.', c: 'ready' },
-    issue: { t: 'Λείπει κάτι', d: 'Δες το σημείωμα του καταστήματος.', c: 'issue' },
+    new: { t: 'Καταχωρήθηκε', d: 'Η παραγγελία σας ετοιμάζεται.', c: 'new' },
+    ready: { t: 'Έτοιμη για παραλαβή', d: 'Σας περιμένει στο Campus Store. Ώρες παραλαβής: 9:00–11:30 και 13:00–16:00. Μετά τις 16:00 τα προϊόντα επιστρέφουν στο ράφι, εκτός αν μας έχετε ενημερώσει για άλλη ώρα.', c: 'ready' },
+    issue: { t: 'Λείπει κάτι', d: 'Δείτε το σημείωμα του καταστήματος.', c: 'issue' },
     done: { t: 'Παραλήφθηκε', d: '', c: 'done' }
   };
 

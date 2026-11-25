@@ -222,7 +222,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
     American Farm School
    </div></div>
    <h1>Campus Store</h1>
-   <p>Διάλεξε προϊόντα και παρέλαβέ τα σήμερα από το κατάστημα.</p>
+   <p>Διαλέξτε προϊόντα και παραλάβετέ τα σήμερα από το κατάστημα.</p>
    <button class="install" id="installBtn">Εγκατάσταση στο κινητό</button>
   </div>
   <svg class="scene" viewBox="0 0 190 150" aria-hidden="true">
@@ -248,19 +248,19 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 
 <main class="wrap">
  <div id="live"></div>
- <p class="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, διάλεξέ την στην ολοκλήρωση. Έως 10 τεμάχια ανά προϊόν.</p>
- <button class="repeat" id="repeatBtn">Επανάληψη της τελευταίας μου παραγγελίας</button>
+ <p class="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, επιλέξτε την στην ολοκλήρωση της παραγγελίας. Έως 10 τεμάχια ανά προϊόν.</p>
+ <button class="repeat" id="repeatBtn">Επανάληψη της τελευταίας παραγγελίας</button>
  <div id="list"></div>
  <footer>Campus Store · American Farm School</footer>
 </main>
 
-<div class="bar"><button id="cartBtn" disabled><span id="cartTxt">Πρόσθεσε προϊόντα</span><span class="badge" id="cartCount">0</span></button></div>
+<div class="bar"><button id="cartBtn" disabled><span id="cartTxt">Προσθέστε προϊόντα</span><span class="badge" id="cartCount">0</span></button></div>
 
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
  <div class="shade" id="shade"></div>
  <div class="panel"><div class="wrap">
   <div id="checkout">
-   <div class="ptop"><h2 id="sheetTitle">Η παραγγελία σου</h2><button class="x" data-close aria-label="Κλείσιμο">✕</button></div>
+   <div class="ptop"><h2 id="sheetTitle">Η παραγγελία σας</h2><button class="x" data-close aria-label="Κλείσιμο">✕</button></div>
    <div class="sum" id="sum"></div>
    <form id="form" novalidate>
     <label for="name">Ονοματεπώνυμο *</label>
@@ -278,8 +278,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
    </form>
   </div>
   <div id="login" hidden>
-   <div class="ptop"><h2 id="loginTitle">Καλώς ήρθες</h2><button class="x" data-close aria-label="Κλείσιμο">✕</button></div>
-   <p class="lead">Με λογαριασμό βλέπεις το ιστορικό σου και ξαναπαραγγέλνεις με ένα πάτημα. Αν δεν θέλεις, συνέχισε ως επισκέπτης.</p>
+   <div class="ptop"><h2 id="loginTitle">Καλώς ήρθατε</h2><button class="x" data-close aria-label="Κλείσιμο">✕</button></div>
+   <p class="lead">Με λογαριασμό βλέπετε το ιστορικό σας και ξαναπαραγγέλνετε με ένα πάτημα. Αν δεν θέλετε, συνεχίστε ως επισκέπτης.</p>
    <button class="gbtn" id="googleBtn" type="button"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Σύνδεση με Google</button>
    <div class="or">ή με email</div>
    <form id="authForm" novalidate>
@@ -319,11 +319,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
    <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="#2f6b40"/><circle cx="60" cy="60" r="44" fill="#1d4a2c"/><path d="M38 61l15 15 30-32" fill="none" stroke="#f3b52f" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
    <h2>Η παραγγελία στάλθηκε!</h2>
    <p class="dcode" id="doneCode" hidden></p>
-   <p id="doneTxt">Θα σε περιμένει στο Campus Store.</p>
+   <p id="doneTxt">Θα σας περιμένει στο Campus Store.</p>
    <div class="sum" id="doneSum" style="text-align:start"></div>
    <button class="ghost" id="newBtn">Νέα παραγγελία</button>
-   <button class="guestbtn" id="suggestBtn" hidden>Φτιάξε λογαριασμό για να κρατάς ιστορικό</button>
-   <div class="ios" id="iosTip">Για να την έχεις σαν εφαρμογή: πάτα το κουμπί <b>Κοινοποίηση</b> του Safari και μετά <b>«Προσθήκη στην οθόνη Αφετηρίας»</b>.</div>
+   <button class="guestbtn" id="suggestBtn" hidden>Φτιάξτε λογαριασμό για να κρατάτε ιστορικό</button>
+   <div class="ios" id="iosTip">Για να την έχετε σαν εφαρμογή: πατήστε το κουμπί <b>Κοινοποίηση</b> του Safari και μετά <b>«Προσθήκη στην οθόνη Αφετηρίας»</b>.</div>
   </div>
  </div></div>
 </div>
@@ -399,7 +399,7 @@ function count(){return Object.values(cart).reduce((a,b)=>a+b,0)}
 function render(){
  document.querySelectorAll('.row').forEach(r=>{const q=cart[r.dataset.id]||0;r.classList.toggle('has',q>0);r.querySelector('output').textContent=q;r.querySelector('.plus').disabled=q>=MAX});
  const n=count();$('cartCount').textContent=n;$('cartBtn').disabled=!n;
- $('cartTxt').textContent=n?'Ολοκλήρωση παραγγελίας':'Πρόσθεσε προϊόντα';
+ $('cartTxt').textContent=n?'Ολοκλήρωση παραγγελίας':'Προσθέστε προϊόντα';
  ls.set('cs_cart',cart);
  $('repeatBtn').classList.toggle('show',!n&&!!ls.get('cs_last'));
 }
@@ -479,21 +479,21 @@ $('cartBtn').addEventListener('click',openCheckout);
 let signUp=false;
 function setMode(up){signUp=up;$('nameBox').hidden=!up;$('authBtn').textContent=up?'Δημιουργία λογαριασμού':'Σύνδεση';
  $('modeBtn').textContent=up?'Έχω ήδη λογαριασμό':'Δεν έχω λογαριασμό';$('aPass').autocomplete=up?'new-password':'current-password';$('aErr').textContent='';$('aOk').textContent=''}
-function openLogin(first){setMode(false);$('loginTitle').textContent=first?'Καλώς ήρθες':'Σύνδεση';show('login')}
+function openLogin(first){setMode(false);$('loginTitle').textContent=first?'Καλώς ήρθατε':'Σύνδεση';show('login')}
 $('modeBtn').addEventListener('click',()=>setMode(!signUp));
 $('guestBtn').addEventListener('click',()=>{ls.set('cs_welcomed',1);closeSheet()});
 $('googleBtn').addEventListener('click',async()=>{$('aErr').textContent='';try{await API.google()}catch(e){$('aErr').textContent=msg(e)}});
 $('authForm').addEventListener('submit',async e=>{
  e.preventDefault();const em=$('aEmail').value.trim(),pw=$('aPass').value,n=$('aName').value.trim();
  $('aErr').textContent='';$('aOk').textContent='';
- if(signUp&&n.length<3)return $('aErr').textContent='Γράψε το ονοματεπώνυμό σου.';
+ if(signUp&&n.length<3)return $('aErr').textContent='Γράψτε το ονοματεπώνυμό σας.';
  const b=$('authBtn');b.disabled=true;
  try{if(signUp){await API.emailUp(em,pw,n);user={...user,anon:false,email:em,name:n};await API.saveProfile({name:n});profile={...profile,name:n};paintAcct();closeSheet()}else await API.emailIn(em,pw)}catch(er){$('aErr').textContent=msg(er)}
  b.disabled=false;
 });
 $('forgotBtn').addEventListener('click',async()=>{const em=$('aEmail').value.trim();$('aErr').textContent='';$('aOk').textContent='';
- if(!em)return $('aErr').textContent='Γράψε πρώτα το email σου.';
- try{await API.reset(em);$('aOk').textContent='Σου στείλαμε email για να ορίσεις νέο κωδικό.'}catch(er){$('aErr').textContent=msg(er)}});
+ if(!em)return $('aErr').textContent='Γράψτε πρώτα το email σας.';
+ try{await API.reset(em);$('aOk').textContent='Σας στείλαμε email για να ορίσετε νέο κωδικό.'}catch(er){$('aErr').textContent=msg(er)}});
 
 /* account */
 function fmtDate(d){return d.toLocaleDateString('el-GR',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})}
@@ -505,11 +505,11 @@ function paintHistory(){
  $('history').innerHTML=myOrders.length?myOrders.map((o,i)=>`<div class="order"><div class="when">${esc(fmtDate(o.at))}${o.code?` · #${esc(o.code)}`:''}<span>${esc(pickupTxt(o))}</span></div>
   <div style="margin-top:6px">${stBadge(o)}</div>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
   <ul>${itemsList(o)}</ul>
-  <button class="again" data-i="${i}">Παράγγειλε ξανά</button></div>`).join(''):'<div class="empty">Δεν έχεις κάνει ακόμα παραγγελία με τον λογαριασμό σου.</div>';
+  <button class="again" data-i="${i}">Παραγγείλτε ξανά</button></div>`).join(''):'<div class="empty">Δεν έχετε κάνει ακόμα παραγγελία με τον λογαριασμό σας.</div>';
 }
 function openAccount(){
  if(!real())return openLogin(false);
- $('hello').textContent=`Γεια σου${profile.name||user.name?', '+(profile.name||user.name).split(' ')[0]:''}!`;
+ $('hello').textContent=`Γεια σας${profile.name||user.name?', '+(profile.name||user.name).split(' ')[0]:''}!`;
  $('meEmail').textContent=user.email||'';$('pName').value=profile.name||user.name||'';$('pPhone').value=profile.phone||'';
  $('pOk').textContent='';$('delErr').textContent='';delArm=false;$('delBtn').textContent='Διαγραφή λογαριασμού';
  show('account');paintHistory();
@@ -520,7 +520,7 @@ $('history').addEventListener('click',e=>{const b=e.target.closest('.again');if(
 function paintLive(){
  const week=Date.now()-7*864e5;
  const act=myOrders.filter(o=>o.status!=='done'&&o.at.getTime()>week);
- $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σου</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
+ $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σας</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
   <p class="ldesc">${esc(st.d)}${pickupTxt(o)?' · '+esc(pickupTxt(o)):''}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
   <details><summary>${(n=>n===1?'1 τεμάχιο':n+' τεμάχια')(Object.values(o.items||{}).reduce((a,b)=>a+b,0))}</summary><ul>${itemsList(o)}</ul></details></div>`}).join(''):'';
 }
@@ -536,7 +536,7 @@ $('saveBtn').addEventListener('click',async()=>{const p={name:$('pName').value.t
 $('outBtn').addEventListener('click',async()=>{await API.out();closeSheet()});
 let delArm=false;
 $('delBtn').addEventListener('click',async()=>{
- if(!delArm){delArm=true;$('delBtn').textContent='Πάτα ξανά για οριστική διαγραφή λογαριασμού και ιστορικού';return}
+ if(!delArm){delArm=true;$('delBtn').textContent='Πατήστε ξανά για οριστική διαγραφή λογαριασμού και ιστορικού';return}
  try{await API.del();closeSheet()}catch(e){$('delErr').textContent=msg(e)}});
 $('acctBtn').addEventListener('click',()=>real()?openAccount():openLogin(false));
 $('suggestBtn').addEventListener('click',()=>openLogin(false));
@@ -551,10 +551,10 @@ function paintAcct(){
 $('form').addEventListener('submit',async e=>{
  e.preventDefault();
  const name=$('name').value.trim(),phone=$('phone').value.trim();
- if(name.length<3)return $('err').textContent='Γράψε το ονοματεπώνυμό σου.';
- if(phone.replace(/\D/g,'').length<10)return $('err').textContent='Γράψε ένα σωστό τηλέφωνο (10 ψηφία).';
- if(pickup==='other'&&!$('date').value)return $('err').textContent='Διάλεξε ημέρα παραλαβής.';
- if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκίμασε ξανά σε λίγο.';
+ if(name.length<3)return $('err').textContent='Γράψτε το ονοματεπώνυμό σας.';
+ if(phone.replace(/\D/g,'').length<10)return $('err').textContent='Γράψτε ένα σωστό τηλέφωνο (10 ψηφία).';
+ if(pickup==='other'&&!$('date').value)return $('err').textContent='Διαλέξτε ημέρα παραλαβής.';
+ if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκιμάστε ξανά σε λίγο.';
  const userNotes=$('notes').value.trim();let notes=userNotes;
  const code=API&&user?API.newCode():'';
  if(pickup==='other'){const d=new Date($('date').value+'T12:00');notes=`ΠΑΡΑΛΑΒΗ: ${d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'})}`+(notes?` — ${notes}`:'')}
@@ -565,7 +565,7 @@ $('form').addEventListener('submit',async e=>{
  const btn=$('sendBtn');btn.disabled=true;btn.textContent='Αποστολή…';$('err').textContent='';
  try{
   await fetch(FORM,{method:'POST',mode:'no-cors',body:p});
- }catch(err){$('err').textContent='Η παραγγελία δεν στάλθηκε. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.';btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';return}
+ }catch(err){$('err').textContent='Η παραγγελία δεν στάλθηκε. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.';btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';return}
  const sent={...cart};
  ls.set('cs_me',{name,phone});ls.set('cs_last',sent);
  let tracked=false;
@@ -573,9 +573,9 @@ $('form').addEventListener('submit',async e=>{
   try{await API.addOrder({code,items:sent,lines:ORDER.filter(id=>sent[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:sent[id]})),pickup:pickup==='other'?$('date').value:'today',notes:userNotes,name,phone});tracked=true}catch(e){}
   if(real()&&(name!==profile.name||phone!==profile.phone)){profile={...profile,name,phone};API.saveProfile({name,phone}).catch(()=>{});paintAcct()}
  }
- $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`Κωδικός παραγγελίας<b>#${esc(code)}</b>${tracked?'<small>Θα δεις εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
+ $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`Κωδικός παραγγελίας<b>#${esc(code)}</b>${tracked?'<small>Θα δείτε εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
  $('doneSum').innerHTML=summary(sent);
- $('doneTxt').textContent=pickup==='other'?'Θα σε περιμένει στο Campus Store την ημέρα που διάλεξες.':'Θα σε περιμένει σήμερα στο Campus Store.';
+ $('doneTxt').textContent=pickup==='other'?'Θα σας περιμένει στο Campus Store την ημέρα που επιλέξατε.':'Θα σας περιμένει σήμερα στο Campus Store.';
  cart={};render();$('notes').value='';
  $('suggestBtn').hidden=real()||!API;
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone;
