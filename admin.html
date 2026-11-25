@@ -124,6 +124,19 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
 .tb{margin-top:6px}
 .exp{border:1.5px solid var(--line);background:var(--card);border-radius:10px;min-height:44px;padding:0 14px;font-weight:600;color:var(--ink)}
 [hidden]{display:none!important}
+.shelp{color:var(--muted);font-size:14px;margin:0 0 6px}
+#stockList .day{margin-top:18px}
+.srow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px}
+.srow.is-out{border-color:var(--red);background:light-dark(#fff5f4,#2a1b1a)}
+.sth{width:44px;height:44px;border-radius:10px;background:#fff;border:1px solid var(--line);overflow:hidden;flex:none}
+.sth img{width:100%;height:100%;object-fit:cover}
+.sname{flex:1 1 200px;font-weight:600}
+.seg3{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;flex:0 1 auto}
+.seg3 button{border:0;background:transparent;padding:0 12px;min-height:42px;font-weight:600;font-size:14px;color:var(--ink);border-left:1px solid var(--line)}
+.seg3 button:first-child{border-left:0}
+.seg3 button.on{background:#2f6b40;color:#fff}
+.srow.is-out .seg3 button.on{background:var(--red);color:#fff}
+@media(max-width:600px){.seg3{width:100%}.seg3 button{flex:1;padding:0 6px;font-size:13px}}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
 </style>
@@ -137,6 +150,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   <button class="tab" data-t="ready">Έτοιμες<b id="n-ready">0</b></button>
   <button class="tab" data-t="done" title="Ο αριθμός δείχνει τις σημερινές παραλαβές">Παραλήφθηκαν<b id="n-done">0</b></button>
   <button class="tab" data-t="cancelled" title="Ο αριθμός δείχνει τις σημερινές ακυρώσεις">Ακυρωμένες<b id="n-cancelled">0</b></button>
+  <button class="tab" data-t="stock" title="Ο αριθμός δείχνει πόσα προϊόντα δεν είναι διαθέσιμα">Διαθεσιμότητα<b id="n-stock">0</b></button>
  </nav>
 </header>
 
@@ -157,7 +171,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
  <div id="toasts" class="toasts" aria-live="assertive"></div>
  <div id="printArea" aria-hidden="true"></div>
  <section id="board" hidden>
-  <div class="tools">
+  <div class="tools" id="tools">
    <input type="search" id="q" placeholder="Αναζήτηση: κωδικός, όνομα ή τηλέφωνο" autocomplete="off">
    <label class="chk" id="dayBox" hidden>Ημέρα <select id="day"></select></label>
    <button class="exp" id="expAll" type="button">Άνοιγμα όλων</button>
@@ -166,11 +180,13 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
    <label class="chk" title="Τυπώνει μόνη της κάθε νέα παραγγελία, όσο η σελίδα είναι ανοιχτή"><input type="checkbox" id="autoprint"> Αυτόματη εκτύπωση νέων</label>
   </div>
   <div class="grid" id="grid"></div>
+  <div id="stockList" hidden></div>
  </section>
 </main>
 
 <script src="firebase-config.js"></script>
 <script src="backend.js"></script>
+<script src="catalog.js"></script>
 <script>
 {
 /* eye button on password fields: tap to show / hide what was typed */
@@ -226,7 +242,23 @@ function dayLabel(k){const d=new Date(k+'T12:00'),t=dayKey(new Date()),y=dayKey(
  const long=d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});return k===t?'Σήμερα · '+long:k===y?'Χθες · '+long:long[0].toUpperCase()+long.slice(1)}
 const doneAt=o=>o.upd||o.at;
 const units=l=>l.reduce((a,o)=>a+lines(o).reduce((x,y)=>x+(+y.q||0),0),0);
+/* availability (sold out) */
+let stock={},unstock=null;
+const dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const outState=id=>{const v=stock[id];if(!v)return '';if(!v.until)return 'off';return v.until>=dk(new Date())?'today':''};
+const optName=(it,l)=>['Ποσότητα','Τεμάχια','Τεμάχιο','Φιάλες'].includes(l)||!it.t?(it.t||l):it.t+' — '+l;
+function paintStock(){
+ $('stockList').innerHTML=`<p class="shelp">Ό,τι σημειώσετε εδώ φαίνεται αμέσως στην εφαρμογή ως μη διαθέσιμο και δεν μπαίνει στο καλάθι. Το «Εξαντλήθηκε σήμερα» γίνεται ξανά διαθέσιμο μόνο του την επόμενη μέρα.</p>`+
+ window.CS_CATALOG.map(c=>`<h2 class="day">${esc(c.name)}</h2>`+c.items.map(it=>it.v.map(([id,l,ph])=>{const st=outState(id),p=ph||it.p;
+  return `<div class="srow${st?' is-out':''}" data-id="${esc(id)}"><span class="sth">${p?`<img src="${esc(p)}.jpg" alt="" loading="lazy" onerror="this.remove()">`:''}</span>
+   <span class="sname">${esc(optName(it,l).replace(/\u00a0/g,' '))}</span>
+   <span class="seg3"><button type="button" data-v=""${!st?' class="on"':''}>Διαθέσιμο</button><button type="button" data-v="today"${st==='today'?' class="on"':''}>Εξαντλήθηκε σήμερα</button><button type="button" data-v="off"${st==='off'?' class="on"':''}>Μέχρι νεωτέρας</button></span></div>`}).join('')).join('')).join('');
+}
+function countOut(){let n=0;window.CS_CATALOG.forEach(c=>c.items.forEach(it=>it.v.forEach(v=>{if(outState(v[0]))n++})));$('n-stock').textContent=n}
+function onStock(m){stock=m||{};countOut();if(tab==='stock')paintStock()}
 function paint(){
+ const isStock=tab==='stock';$('grid').hidden=isStock;$('stockList').hidden=!isStock;$('tools').hidden=isStock;
+ if(isStock){paintStock();countOut()}
  const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
  const month=Date.now()-30*864e5,today=dayKey(new Date());
  const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&doneAt(o)>month),cancelled:orders.filter(o=>o.status==='cancelled'&&doneAt(o)>month)};
@@ -240,6 +272,7 @@ function paint(){
  sel.innerHTML=`<option value="">Όλες οι ημέρες (${hist?groups[tab].length:0})</option>`+Object.keys(days).sort().reverse().map(k=>`<option value="${k}">${esc(dayLabel(k))} (${days[k]})</option>`).join('');
  sel.value=days[cur]?cur:'';
  $('dayBox').hidden=!hist||!!q;
+ if(isStock){document.title=(groups.active.length?`(${groups.active.length}) `:'')+'Campus Store · Προσωπικό';return}
  let list=groups[tab];
  if(hist&&sel.value)list=list.filter(o=>dayKey(doneAt(o))===sel.value);
  if(q)list=orders.filter(o=>[o.code,o.name,o.phone].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -267,6 +300,12 @@ function onList(list){
  seen=new Set(list.map(o=>o.id));orders=list;paint();
 }
 
+$('stockList').addEventListener('click',async e=>{
+ const b=e.target.closest('.seg3 button');if(!b)return;const id=b.closest('.srow').dataset.id,v=b.dataset.v;
+ const val=v==='today'?{until:dk(new Date())}:v==='off'?{until:null}:null;
+ b.closest('.seg3').querySelectorAll('button').forEach(x=>x.disabled=true);
+ try{await API.setStock(id,val)}catch(er){toast(msg(er))}
+});
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));paint()});
 $('q').addEventListener('input',paint);
 $('day').addEventListener('change',paint);
@@ -337,6 +376,7 @@ $('outBtn').addEventListener('click',()=>API.out());
   if(!u||u.anon)return showLogin('Μόνο για το προσωπικό του Campus Store.');
   if(API.kind!=='demo'&&!u.verified)return showLogin(`Το ${u.email} δεν έχει επιβεβαιωθεί ακόμα. Πάτα το λινκ στο email επιβεβαίωσης και ανανέωσε τη σελίδα.`);
   showBoard();$('grid').innerHTML='<div class="empty">Φόρτωση…</div>';
+  if(unstock)unstock();unstock=API.watchStock(onStock);
   unwatch=API.watchAll(onList,e=>{if(unwatch){unwatch();unwatch=null}showLogin(e&&e.code==='permission-denied'?`Ο λογαριασμός ${u.email} δεν έχει πρόσβαση στις παραγγελίες.`:msg(e))});
  });
  setInterval(()=>{if(!$('board').hidden&&!(document.activeElement&&document.activeElement.classList.contains('note')))paint()},60e3); // refresh "ΝΕΑ" labels

@@ -143,6 +143,14 @@ h4{font-size:15px;margin:22px 0 4px}
 .seen{margin-top:10px;width:100%;border:1.5px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font-weight:700;min-height:46px}
 .cerr{display:block;color:var(--red);font-size:13px}
 #login.welcome [data-close]{display:none}
+.row.out .lbl{color:var(--muted)}
+.row.out .lbl .th{opacity:.45}
+.lbl .oos{display:table;margin:3px 0 0}
+.row.out .step{opacity:.35}
+.oos{display:inline-block;margin-left:6px;font-size:12px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.head .oos{margin:6px 0 0}
+.card.allout .pic{filter:grayscale(1);opacity:.6}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;width:min(92vw,460px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -354,6 +362,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 
 <script src="firebase-config.js"></script>
 <script src="backend.js"></script>
+<script src="catalog.js"></script>
 <script>
 {
 /* eye button on password fields: tap to show / hide what was typed */
@@ -386,24 +395,7 @@ pasta:'<path d="M14 14h24l2 34H12z" fill="#fbfaf5" stroke="#1d4a2c" stroke-width
 wine:'<path d="M22 4h8v12c0 3 6 5 6 12v20a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3V28c0-7 6-9 6-12z" fill="#5b1a2a"/><rect x="21" y="2" width="10" height="5" rx="1" fill="#f3b52f"/><rect x="16" y="32" width="20" height="10" fill="#fbfaf5"/>'
 };
 
-const CATS=[
-{id:'dairy',name:'Γαλακτοκομικά',items:[
- {p:'gala-duo',t:'Φρέσκο γάλα',a:'milk',v:[['1672897693','Πλήρες · 1\u00a0L','gala'],['979999890','Ελαφρύ · 1\u00a0L','gala-elafry']]},
- {p:'giaourti',t:'Παραδοσιακό γιαούρτι από φρέσκο γάλα',s:'220 g',a:'pot',v:[['1630674149','Ποσότητα']]},
- {p:'straggisto',t:'Στραγγιστό γιαούρτι',a:'pot',v:[['774194173','5% λιπαρά · 500 g','straggisto-5-500'],['822471796','2% λιπαρά · 500 g','straggisto-2-500'],['1208184959','5% λιπαρά · 180 g','straggisto-5-180'],['1301296005','2% λιπαρά · 180 g','straggisto-2-180']]},
- {p:'voutyro',t:'Φρέσκο αγελαδινό βούτυρο',s:'περίπου 400 g',a:'butter',v:[['1515649095','Τεμάχιο']]}]},
-{id:'cheese',name:'Τυριά',items:[
- {p:'tyri',t:'Ημίσκληρο τυρί 4μηνης ωρίμανσης',s:'από φρέσκο γάλα · περίπου 300 g',a:'cheese',v:[['801153241','Κλασικό'],['1263298936','Με ρίγανη'],['463111628','Με μπούκοβο']]},
- {p:'tyri-fetes',t:'Ημίσκληρο τυρί σε φέτες',s:'4μηνης ωρίμανσης',a:'slices',v:[['1567313752','Τεμάχια']]},
- {p:'tyri-trimma',t:'Ημίσκληρο τυρί σε τρίμμα',s:'4μηνης ωρίμανσης',a:'grated',v:[['6610654','Τεμάχια']]}]},
-{id:'eggs',name:'Αυγά',items:[
- {p:'avga-axyrona',t:'Αυγά Ω3 «Αχυρώνα»',a:'eggs',v:[['945325429','Εξάδα μεσαία · 53–63 g','avga-axyrona'],['901308117','Εξάδα μεγάλα · 63–73 g','avga-axyrona-megala']]},
- {p:'avga-klovostoixias',t:'Αυγά Ω3 «Κλωβοστοιχίας»',a:'eggs2',v:[['913176482','Εξάδα μεσαία · 53–63 g','avga-klovostoixias-mesaia'],['1124247424','Εξάδα μεγάλα · 63–73 g','avga-klovostoixias-megala']]}]},
-{id:'pasta',name:'Ζυμαρικά',items:[
- {p:'',t:'',a:'pasta',v:[['1625302866','Χυλοπίτες · 500 g','zymarika'],['1164333084','Τραχανάς γλυκός · 500 g','trachanas'],['494482544','Κριθαράκι · 500 g'],['1847568384','Κους κους · 500 g']]}]},
-{id:'wine',name:'Κρασί',items:[
- {p:'xinomavro',t:'Ξινόμαυρο',s:'φιάλη 750 ml',a:'wine',v:[['1428563921','Φιάλες']]}]}
-];
+const CATS=window.CS_CATALOG;
 
 const nb=s=>s.replace(/ (g|ml|λίτρου)\b/g,' $1');
 CATS.forEach(c=>c.items.forEach(it=>{it.t=nb(it.t);if(it.s)it.s=nb(it.s);it.v.forEach(v=>v[1]=nb(v[1]))}));
@@ -423,7 +415,10 @@ const ITEMS=[];CATS.forEach(c=>c.items.forEach(it=>{it.cat=c.name;ITEMS.push(it)
          nutr:[['Ενέργεια','272 kJ / 65 kcal'],['Λιπαρά','3,8 g'],['-κορεσμένα','2,4 g'],...],
          facts:[['Συστατικά','...'],['Διατήρηση','...']]} */
 const INFO={};
-const clean=c=>{const o={};for(const k in c||{})if(VAR[k])o[k]=Math.min(c[k],MAX);return o};cart=clean(cart);
+let stock={}; // sold-out options, set by the staff page
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const isOut=id=>{const v=stock[id];return !!v&&(!v.until||v.until>=todayKey())};
+const clean=c=>{const o={};for(const k in c||{})if(VAR[k]&&!isOut(k))o[k]=Math.min(c[k],MAX);return o};cart=clean(cart);
 const $=id=>document.getElementById(id);
 
 $('chips').innerHTML=CATS.map((c,i)=>`<button class="chip${i?'':' on'}" data-c="${c.id}">${c.name}</button>`).join('');
@@ -432,9 +427,22 @@ $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.i
  ${solo(it)?'':it.v.map(([id,l,ph])=>rowHTML(id,l,ph,it)).join('')}
  </div>`).join('')}</section>`).join('');
 
+function notice(t){document.querySelectorAll('.toast').forEach(x=>x.remove());const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),6000);el.addEventListener('click',()=>el.remove())}
+function onStock(m){
+ stock=m||{};
+ const gone=Object.keys(cart).filter(isOut);
+ if(gone.length){gone.forEach(id=>delete cart[id]);notice(gone.length===1?`«${VAR[gone[0]].n}» εξαντλήθηκε και αφαιρέθηκε από το καλάθι σας.`:'Κάποια προϊόντα εξαντλήθηκαν και αφαιρέθηκαν από το καλάθι σας.');
+  if(!$('checkout').hidden&&$('sheet').classList.contains('open'))$('sum').innerHTML=summary(cart)}
+ render();
+}
 function count(){return Object.values(cart).reduce((a,b)=>a+b,0)}
 function render(){
- document.querySelectorAll('.row').forEach(r=>{const q=cart[r.dataset.id]||0;r.classList.toggle('has',q>0);r.querySelector('output').textContent=q;r.querySelector('.plus').disabled=q>=MAX});
+ document.querySelectorAll('.row').forEach(r=>{const id=r.dataset.id,q=cart[id]||0,out=isOut(id);r.classList.toggle('has',q>0);r.classList.toggle('out',out);
+  r.querySelector('output').textContent=q;r.querySelector('.plus').disabled=q>=MAX||out;
+  let tag=r.querySelector('.oos');
+  if(out&&!tag){tag=document.createElement('span');tag.className='oos';(r.querySelector('.lbl>span:last-child')||r.querySelector('.head>div:nth-child(2)')||r).appendChild(tag)}
+  if(tag){if(out)tag.textContent=stock[id].until?'Εξαντλήθηκε σήμερα':'Μη διαθέσιμο';else tag.remove()}});
+ document.querySelectorAll('#list .card').forEach(c=>{const it=ITEMS[+c.dataset.item];c.classList.toggle('allout',!!it&&it.v.every(v=>isOut(v[0])))});
  const n=count();$('cartCount').textContent=n;$('cartBtn').disabled=!n;
  $('cartTxt').textContent=n?'Ολοκλήρωση παραγγελίας':'Προσθέστε προϊόντα';
  ls.set('cs_cart',cart);
@@ -613,6 +621,8 @@ $('form').addEventListener('submit',async e=>{
  if(phone.replace(/\D/g,'').length<10)return $('err').textContent='Γράψτε ένα σωστό τηλέφωνο (10 ψηφία).';
  if(pickup==='other'&&!$('date').value)return $('err').textContent='Διαλέξτε ημέρα παραλαβής.';
  if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκιμάστε ξανά σε λίγο.';
+ if(Object.keys(cart).some(isOut)){Object.keys(cart).filter(isOut).forEach(id=>delete cart[id]);render();$('sum').innerHTML=summary(cart);return $('err').textContent='Κάποια προϊόντα μόλις εξαντλήθηκαν και αφαιρέθηκαν. Ελέγξτε την παραγγελία και πατήστε ξανά Αποστολή.'}
+ if(!count())return $('err').textContent='Το καλάθι σας είναι άδειο.';
  const userNotes=$('notes').value.trim();let notes=userNotes;
  const code=API&&user?API.newCode():'';
  if(pickup==='other'){const d=new Date($('date').value+'T12:00');notes=`ΠΑΡΑΛΑΒΗ: ${d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'})}`+(notes?` — ${notes}`:'')}
@@ -679,6 +689,7 @@ render();
  if(!API)return;
  if(API.kind==='demo')$('demoBar').hidden=false;
  $('acctBtn').classList.add('show');
+ try{API.watchStock(onStock)}catch(e){}
  let first=true,guestTried=false;
  API.onChange(async u=>{
   const was=real();user=u;profile={};

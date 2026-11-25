@@ -58,6 +58,10 @@
       watchAll: (cb, err) => S.onSnapshot(S.query(S.collection(db, 'orders'), S.orderBy('createdAt', 'desc'), S.limit(600)),
         snap => cb(snap.docs.map(mapOrder)), e => err && err(e)),
       setStatus: (id, status, note) => S.updateDoc(S.doc(db, 'orders', id), { status, staffNote: note || '', cancelledBy: status === 'cancelled' ? 'store' : '', updatedAt: S.serverTimestamp() }),
+      watchStock: cb => S.onSnapshot(S.doc(db, 'settings', 'stock'), snap => cb((snap.exists() && snap.data().soldOut) || {}), () => cb({})),
+      setStock: (id, val) => val
+        ? S.setDoc(S.doc(db, 'settings', 'stock'), { soldOut: { [id]: val }, updatedAt: S.serverTimestamp() }, { merge: true })
+        : S.setDoc(S.doc(db, 'settings', 'stock'), { soldOut: { [id]: S.deleteField() }, updatedAt: S.serverTimestamp() }, { merge: true }),
       cancel: id => S.updateDoc(S.doc(db, 'orders', id), { status: 'cancelled', cancelledBy: 'customer', updatedAt: S.serverTimestamp() }),
       del: async () => {
         const mine = await S.getDocs(S.query(S.collection(db, 'orders'), S.where('uid', '==', me().uid)));
@@ -83,7 +87,7 @@
     const emitAuth = () => { const u = cur(); authCb(u ? { uid: db.cur, email: u.email || '', name: u.name || '', anon: !!u.anon, verified: true } : null); };
     const mapO = o => ({ ...o, at: new Date(o.at), upd: o.upd ? new Date(o.upd) : null });
     function fire() { watchers.forEach(w => w()); }
-    addEventListener('storage', e => { if (e.key === KEY) { const n = load(); if (n) { db.users = n.users; db.orders = n.orders; } fire(); } });
+    addEventListener('storage', e => { if (e.key === KEY) { const n = load(); if (n) { db.users = n.users; db.orders = n.orders; db.stock = n.stock; } fire(); } });
     const watch = f => { watchers.add(f); setTimeout(f, 0); return () => watchers.delete(f); };
     return {
       kind: 'demo',
@@ -110,6 +114,8 @@
       watchMine: cb => watch(() => cb(db.orders.filter(o => o.uid === db.cur).map(mapO))),
       watchAll: cb => watch(() => cb(db.orders.map(mapO))),
       setStatus: async (id, status, note) => { const o = db.orders.find(x => x.id === id); if (o) { o.status = status; o.staffNote = note || ''; o.cancelledBy = status === 'cancelled' ? 'store' : ''; o.upd = new Date().toISOString(); save(); } },
+      watchStock: cb => watch(() => cb(db.stock || {})),
+      setStock: async (id, val) => { db.stock = db.stock || {}; if (val) db.stock[id] = val; else delete db.stock[id]; save(); },
       cancel: async id => { const o = db.orders.find(x => x.id === id && x.uid === db.cur); if (o && !['done', 'cancelled'].includes(o.status)) { o.status = 'cancelled'; o.cancelledBy = 'customer'; o.upd = new Date().toISOString(); save(); } },
       del: async () => { db.orders = db.orders.filter(o => o.uid !== db.cur); delete db.users[db.cur]; db.cur = null; save(); emitAuth(); }
     };
