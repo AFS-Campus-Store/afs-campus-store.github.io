@@ -50,7 +50,8 @@ h1{font-size:clamp(32px,8vw,46px);line-height:1.05;margin:14px 0 6px;font-weight
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .acct{position:absolute;z-index:2;top:calc(14px + env(safe-area-inset-top));right:max(16px,calc((100% - 720px)/2 + 16px));display:none;align-items:center;gap:8px;border:1.5px solid rgba(244,241,232,.5);background:transparent;color:#f4f1e8;border-radius:999px;padding:6px 14px 6px 6px;min-height:44px;font-weight:600;font-size:14px}
 .acct.show{display:inline-flex}
-@media(max-width:440px){.acct:not(.guest){padding:6px}.acct:not(.guest) #acctTxt{display:none}}
+#acctTxt{max-width:12ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:440px){#acctTxt{max-width:8ch}.brand{font-size:13px}}
 .av{width:32px;height:32px;border-radius:50%;background:var(--yolk);color:var(--yolk-ink);display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
 .acct.guest .av{background:rgba(244,241,232,.2);color:#f4f1e8}
 .lead{color:var(--muted);margin:6px 0 16px}
@@ -581,7 +582,8 @@ $('suggestBtn').addEventListener('click',()=>openLogin(false));
 function paintAcct(){
  const r=real(),n=(r&&(profile.name||user.name||user.email))||'';
  $('acctBtn').classList.toggle('guest',!r);$('avTxt').textContent=r?(n.trim()[0]||'•').toUpperCase():'?';
- $('acctTxt').textContent=r?'Λογαριασμός':'Σύνδεση';
+ $('acctTxt').textContent=r?((profile.name||user.name||'').trim().split(/\s+/)[0]||(user.email||'').split('@')[0]||'Λογαριασμός'):'Σύνδεση';
+ $('acctBtn').title=r?(profile.name||user.name||user.email||''):'';
 }
 
 /* ---------- send order ---------- */
