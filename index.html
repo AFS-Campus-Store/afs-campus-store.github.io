@@ -151,6 +151,7 @@ h4{font-size:15px;margin:22px 0 4px}
 .head .oos{margin:6px 0 0}
 .card.allout .pic{filter:grayscale(1);opacity:.6}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;width:min(92vw,460px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.announce{margin:18px 0 0;padding:12px 16px;border-radius:14px;background:var(--yolk);color:var(--yolk-ink);font-weight:700;white-space:pre-line}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -254,7 +255,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
     American Farm School
    </div></div>
    <h1>Campus Store</h1>
-   <p>Διαλέξτε προϊόντα και παραλάβετέ τα σήμερα από το κατάστημα.</p>
+   <p>Διαλέξτε προϊόντα και παραλάβετέ τα από το κατάστημα.</p>
    <button class="install" id="installBtn">Εγκατάσταση στο κινητό</button>
   </div>
   <svg class="scene" viewBox="0 0 190 150" aria-hidden="true">
@@ -279,8 +280,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 <nav class="chips" aria-label="Κατηγορίες"><div class="wrap" id="chips"></div></nav>
 
 <main class="wrap">
+ <div class="announce" id="announce" hidden></div>
  <div id="live"></div>
- <p class="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, επιλέξτε την στην ολοκλήρωση της παραγγελίας. Έως 10 τεμάχια ανά προϊόν.</p>
+ <p class="notice" id="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, επιλέξτε την στην ολοκλήρωση της παραγγελίας. Έως 10 τεμάχια ανά προϊόν.</p>
  <button class="repeat" id="repeatBtn">Επανάληψη της τελευταίας παραγγελίας</button>
  <div id="list"></div>
  <footer>Campus Store · American Farm School</footer>
@@ -498,10 +500,23 @@ const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){cons
 document.querySelectorAll('section').forEach(s=>io.observe(s));
 $('repeatBtn').addEventListener('click',()=>{const l=ls.get('cs_last');if(l){cart=clean(l);render()}});
 
+/* opening days, same-day cutoff and announcement (set on the staff page) */
+let H=CSBackend.hours({});
+const longDay=k=>new Date(k+'T12:00').toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});
+function applyHours(){
+ const same=H.sameDay(),next=H.nextOpen(),first=$('seg').querySelector('button');
+ // first choice: today if still possible, otherwise the next opening day
+ first.dataset.v=same?'today':'next';first.textContent=same?'Σήμερα':longDay(next).replace(/^./,c=>c.toUpperCase());
+ if(!same&&pickup==='today')pickup='next';if(same&&pickup==='next')pickup='today';
+ $('date').min=same?H.nextOpen():H.nextOpen(new Date(next+'T12:00'));
+ $('notice').textContent=(same?`Οι παραγγελίες είναι για παραλαβή σήμερα (έως τις ${H.cfg.cutoff} για αυθημερόν).`
+  :`Το κατάστημα ${H.isOpen(H.dkey(new Date()))?'δεν δέχεται άλλες παραγγελίες για σήμερα':'είναι κλειστό σήμερα'}. Οι παραγγελίες θα είναι έτοιμες ${longDay(next)}.`)+' Για άλλη ημέρα, επιλέξτε την στην ολοκλήρωση της παραγγελίας. Έως 10 τεμάχια ανά προϊόν.';
+ const a=H.cfg.announceOn&&String(H.cfg.announce||'').trim();$('announce').hidden=!a;$('announce').textContent=a||'';
+}
 let pickup='today';
 $('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pickup=b.dataset.v;
  document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x===b));$('dateBox').hidden=pickup!=='other'});
-const tomorrow=new Date(Date.now()+864e5);$('date').min=tomorrow.toISOString().slice(0,10);
+applyHours();setInterval(applyHours,60e3); // the cutoff can pass while the app is open
 
 /* ---------- accounts and order status (code in backend.js) ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -519,7 +534,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',
 $('shade').addEventListener('click',tryClose);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')tryClose()});
 
-function openCheckout(){$('sum').innerHTML=summary(cart);$('err').textContent='';
+function openCheckout(){applyHours();$('seg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.v===pickup));$('dateBox').hidden=pickup!=='other';$('sum').innerHTML=summary(cart);$('err').textContent='';
  const saved=ls.get('cs_me')||{};const me=real()?{name:profile.name||user.name||saved.name||'',phone:profile.phone||saved.phone||''}:saved;
  $('name').value=me.name||'';$('phone').value=me.phone||'';show('checkout')}
 $('cartBtn').addEventListener('click',openCheckout);
@@ -621,13 +636,17 @@ $('form').addEventListener('submit',async e=>{
  const name=$('name').value.trim(),phone=$('phone').value.trim();
  if(name.length<3)return $('err').textContent='Γράψτε το ονοματεπώνυμό σας.';
  if(phone.replace(/\D/g,'').length<10)return $('err').textContent='Γράψτε ένα σωστό τηλέφωνο (10 ψηφία).';
+ const wasToday=pickup==='today';applyHours();
+ if(wasToday&&pickup==='next'){document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x.dataset.v==='next'));return $('err').textContent=`Πέρασε η ώρα για παραλαβή σήμερα. Η παραγγελία θα είναι έτοιμη ${longDay(H.nextOpen())}. Πατήστε ξανά Αποστολή για να συνεχίσετε.`}
  if(pickup==='other'&&!$('date').value)return $('err').textContent='Διαλέξτε ημέρα παραλαβής.';
+ if(pickup==='other'&&($('date').value<$('date').min||!H.isOpen($('date').value)))return $('err').textContent='Το κατάστημα είναι κλειστό εκείνη την ημέρα ή δεν μπορεί να ετοιμάσει την παραγγελία τόσο νωρίς. Διαλέξτε άλλη ημέρα.';
+ const pickDate=pickup==='other'?$('date').value:pickup==='next'?H.nextOpen():'';
  if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκιμάστε ξανά σε λίγο.';
  if(Object.keys(cart).some(isOut)){Object.keys(cart).filter(isOut).forEach(id=>delete cart[id]);render();$('sum').innerHTML=summary(cart);return $('err').textContent='Κάποια προϊόντα μόλις εξαντλήθηκαν και αφαιρέθηκαν. Ελέγξτε την παραγγελία και πατήστε ξανά Αποστολή.'}
  if(!count())return $('err').textContent='Το καλάθι σας είναι άδειο.';
  const userNotes=$('notes').value.trim();let notes=userNotes;
  const code=API&&user?API.newCode():'';
- if(pickup==='other'){const d=new Date($('date').value+'T12:00');notes=`ΠΑΡΑΛΑΒΗ: ${d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'})}`+(notes?` — ${notes}`:'')}
+ if(pickDate){notes=`ΠΑΡΑΛΑΒΗ: ${longDay(pickDate)}`+(notes?` — ${notes}`:'')}
  const extra=ORDER.filter(id=>cart[id]&&id.startsWith('x-')).map(id=>`${VAR[id].n.replace(/\u00a0/g,' ')} × ${cart[id]}`); // products without a form question
  if(extra.length)notes=`ΕΠΙΠΛΕΟΝ: ${extra.join(' · ')}`+(notes?` — ${notes}`:'');
  if(code)notes=`#${code}`+(notes?` · ${notes}`:'');
@@ -642,12 +661,12 @@ $('form').addEventListener('submit',async e=>{
  ls.set('cs_me',{name,phone});ls.set('cs_last',sent);
  let tracked=false;
  if(user){ // status tracking + history; the order itself is already in the form
-  try{await API.addOrder({code,items:sent,lines:ORDER.filter(id=>sent[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:sent[id]})),pickup:pickup==='other'?$('date').value:'today',notes:userNotes,name,phone});tracked=true}catch(e){}
+  try{await API.addOrder({code,items:sent,lines:ORDER.filter(id=>sent[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:sent[id]})),pickup:pickDate||'today',notes:userNotes,name,phone});tracked=true}catch(e){}
   if(real()&&(name!==profile.name||phone!==profile.phone)){profile={...profile,name,phone};API.saveProfile({name,phone}).catch(()=>{});paintAcct()}
  }
  $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`Κωδικός παραγγελίας<b>#${esc(code)}</b>${tracked?'<small>Θα δείτε εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
  $('doneSum').innerHTML=summary(sent);
- $('doneTxt').textContent=pickup==='other'?'Θα σας περιμένει στο Campus Store την ημέρα που επιλέξατε.':'Θα σας περιμένει σήμερα στο Campus Store.';
+ $('doneTxt').textContent=pickDate?`Θα σας περιμένει στο Campus Store ${longDay(pickDate)}.`:'Θα σας περιμένει σήμερα στο Campus Store.';
  cart={};render();$('notes').value='';
  $('suggestBtn').hidden=real()||!API;
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone;
@@ -694,6 +713,7 @@ render();
  if(API.kind==='demo')$('demoBar').hidden=false;
  $('acctBtn').classList.add('show');
  try{API.watchStock(onStock)}catch(e){}
+ try{API.watchStore(c=>{H=CSBackend.hours(c);applyHours()})}catch(e){}
  let first=true,guestTried=false;
  API.onChange(async u=>{
   const was=real();user=u;profile={};

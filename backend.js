@@ -58,6 +58,8 @@
       watchAll: (cb, err) => S.onSnapshot(S.query(S.collection(db, 'orders'), S.orderBy('createdAt', 'desc'), S.limit(600)),
         snap => cb(snap.docs.map(mapOrder)), e => err && err(e)),
       setStatus: (id, status, note) => S.updateDoc(S.doc(db, 'orders', id), { status, staffNote: note || '', cancelledBy: status === 'cancelled' ? 'store' : '', updatedAt: S.serverTimestamp() }),
+      watchStore: cb => S.onSnapshot(S.doc(db, 'settings', 'store'), snap => cb(snap.exists() ? snap.data() : {}), () => cb({})),
+      setStore: val => S.setDoc(S.doc(db, 'settings', 'store'), { ...val, updatedAt: S.serverTimestamp() }),
       watchStock: cb => S.onSnapshot(S.doc(db, 'settings', 'stock'), snap => cb((snap.exists() && snap.data().soldOut) || {}), () => cb({})),
       setStock: (id, val) => val
         ? S.setDoc(S.doc(db, 'settings', 'stock'), { soldOut: { [id]: val }, updatedAt: S.serverTimestamp() }, { merge: true })
@@ -87,7 +89,7 @@
     const emitAuth = () => { const u = cur(); authCb(u ? { uid: db.cur, email: u.email || '', name: u.name || '', anon: !!u.anon, verified: true } : null); };
     const mapO = o => ({ ...o, at: new Date(o.at), upd: o.upd ? new Date(o.upd) : null });
     function fire() { watchers.forEach(w => w()); }
-    addEventListener('storage', e => { if (e.key === KEY) { const n = load(); if (n) { db.users = n.users; db.orders = n.orders; db.stock = n.stock; } fire(); } });
+    addEventListener('storage', e => { if (e.key === KEY) { const n = load(); if (n) { db.users = n.users; db.orders = n.orders; db.stock = n.stock; db.store = n.store; } fire(); } });
     const watch = f => { watchers.add(f); setTimeout(f, 0); return () => watchers.delete(f); };
     return {
       kind: 'demo',
@@ -114,6 +116,8 @@
       watchMine: cb => watch(() => cb(db.orders.filter(o => o.uid === db.cur).map(mapO))),
       watchAll: cb => watch(() => cb(db.orders.map(mapO))),
       setStatus: async (id, status, note) => { const o = db.orders.find(x => x.id === id); if (o) { o.status = status; o.staffNote = note || ''; o.cancelledBy = status === 'cancelled' ? 'store' : ''; o.upd = new Date().toISOString(); save(); } },
+      watchStore: cb => watch(() => cb(db.store || {})),
+      setStore: async val => { db.store = val; save(); },
       watchStock: cb => watch(() => cb(db.stock || {})),
       setStock: async (id, val) => { db.stock = db.stock || {}; if (val) db.stock[id] = val; else delete db.stock[id]; save(); },
       cancel: async id => { const o = db.orders.find(x => x.id === id && x.uid === db.cur); if (o && !['done', 'cancelled'].includes(o.status)) { o.status = 'cancelled'; o.cancelledBy = 'customer'; o.upd = new Date().toISOString(); save(); } },
@@ -143,6 +147,17 @@
     cancelled: { t: 'Ακυρώθηκε', d: 'Η παραγγελία ακυρώθηκε.', c: 'cancelled' }
   };
 
+  // Store opening rules (edited on the staff page, Ρυθμίσεις). Defaults until the store saves its own.
+  const STORE_DEFAULTS = { days: [1, 2, 3, 4, 5], cutoff: '15:30', closed: [], announce: '', announceOn: false };
+  const dkey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  function hours(cfg) {
+    const c = { ...STORE_DEFAULTS, ...(cfg || {}) };
+    const isOpen = key => { const d = new Date(key + 'T12:00'); return c.days.includes(d.getDay()) && !(c.closed || []).includes(key); };
+    const sameDay = (now = new Date()) => isOpen(dkey(now)) && (now.getHours() * 60 + now.getMinutes()) < (+c.cutoff.split(':')[0] * 60 + +c.cutoff.split(':')[1]);
+    const nextOpen = (now = new Date()) => { for (let i = 1; i < 90; i++) { const k = dkey(new Date(now.getTime() + i * 864e5)); if (isOpen(k)) return k; } return dkey(new Date(now.getTime() + 864e5)); };
+    return { cfg: c, isOpen, sameDay, nextOpen, dkey };
+  }
+
   async function start() {
     const cfg = window.FIREBASE_CONFIG;
     if (cfg === 'demo' || location.hash === '#demo') return demoAPI();
@@ -150,5 +165,5 @@
     return null;
   }
 
-  window.CSBackend = { start, msg, STATUS };
+  window.CSBackend = { start, msg, STATUS, hours, STORE_DEFAULTS };
 })();
