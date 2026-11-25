@@ -75,6 +75,10 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
 .gbtn svg{width:20px;height:20px}
 .main{width:100%;border:0;border-radius:14px;background:var(--yolk);color:var(--yolk-ink);font-weight:800;min-height:52px}
 .link{border:0;background:none;color:var(--green2);font-weight:600;text-decoration:underline;padding:10px 0;min-height:44px}
+.day{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:14px 0 0;font-size:20px;font-weight:800;border-bottom:2px solid var(--line);padding-bottom:6px}
+.day:first-child{margin-top:0}
+.day span{font-size:14px;font-weight:600;color:var(--muted)}
+#day{font-size:15px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;min-height:44px;color:var(--ink)}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
 </style>
@@ -86,7 +90,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
  <nav class="tabs" id="tabs" hidden>
   <button class="tab on" data-t="active">Προς ετοιμασία<b id="n-active">0</b></button>
   <button class="tab" data-t="ready">Έτοιμες<b id="n-ready">0</b></button>
-  <button class="tab" data-t="done">Παραλήφθηκαν<b id="n-done">0</b></button>
+  <button class="tab" data-t="done" title="Ο αριθμός δείχνει τις σημερινές παραλαβές">Παραλήφθηκαν<b id="n-done">0</b></button>
  </nav>
 </header>
 
@@ -107,6 +111,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
  <section id="board" hidden>
   <div class="tools">
    <input type="search" id="q" placeholder="Αναζήτηση: κωδικός, όνομα ή τηλέφωνο" autocomplete="off">
+   <label class="chk" id="dayBox" hidden>Ημέρα <select id="day"></select></label>
    <label class="chk"><input type="checkbox" id="sound"> Ήχος σε νέα παραγγελία</label>
   </div>
   <div class="grid" id="grid"></div>
@@ -135,7 +140,7 @@ function ticket(o){
  return `<article class="t ${st.c}${fresh?' fresh':''}" data-id="${esc(o.id)}">
   <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}</span></div>
   <div class="who">${esc(o.name)}</div>
-  <div class="meta"><span>${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
+  <div class="meta"><span>${o.status==='done'&&o.upd?'Παραλήφθηκε '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}))+' · Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
   ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}
   <ul class="items">${lines(o).map(l=>`<li><span>${esc(l.n)}</span><b>× ${esc(l.q)}</b></li>`).join('')}</ul>
   ${o.notes?`<p class="cnote"><b>Σχόλιο πελάτη:</b> ${esc(o.notes)}</p>`:''}
@@ -146,16 +151,35 @@ function ticket(o){
   <div class="err"></div></article>`;
 }
 
+const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function dayLabel(k){const d=new Date(k+'T12:00'),t=dayKey(new Date()),y=dayKey(new Date(Date.now()-864e5));
+ const long=d.toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});return k===t?'Σήμερα · '+long:k===y?'Χθες · '+long:long[0].toUpperCase()+long.slice(1)}
+const doneAt=o=>o.upd||o.at;
+const units=l=>l.reduce((a,o)=>a+lines(o).reduce((x,y)=>x+(+y.q||0),0),0);
 function paint(){
  const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
- const two=Date.now()-2*864e5;
- const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&(o.upd||o.at)>two)};
- for(const k in groups)$('n-'+k).textContent=groups[k].length;
+ const month=Date.now()-30*864e5,today=dayKey(new Date());
+ const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&doneAt(o)>month)};
+ $('n-active').textContent=groups.active.length;$('n-ready').textContent=groups.ready.length;
+ $('n-done').textContent=groups.done.filter(o=>dayKey(doneAt(o))===today).length; // picked up today
+ // day picker for the picked-up tab
+ const days={};groups.done.forEach(o=>{const k=dayKey(doneAt(o));days[k]=(days[k]||0)+1});
+ const sel=$('day'),cur=sel.value;
+ sel.innerHTML=`<option value="">Όλες οι ημέρες (${groups.done.length})</option>`+Object.keys(days).sort().reverse().map(k=>`<option value="${k}">${esc(dayLabel(k))} (${days[k]})</option>`).join('');
+ sel.value=days[cur]?cur:'';
+ $('dayBox').hidden=tab!=='done'||!!q;
  let list=groups[tab];
+ if(tab==='done'&&sel.value)list=list.filter(o=>dayKey(doneAt(o))===sel.value);
  if(q)list=orders.filter(o=>[o.code,o.name,o.phone].some(v=>String(v||'').toLowerCase().includes(q)));
- list=[...list].sort((a,b)=>tab==='done'&&!q?(b.upd||b.at)-(a.upd||a.at):a.at-b.at); // oldest first to prepare
  const focus=document.activeElement&&document.activeElement.classList.contains('note')?document.activeElement.closest('.t').dataset.id:null;
- $('grid').innerHTML=list.length?list.map(ticket).join(''):`<div class="empty">${q?'Δεν βρέθηκε παραγγελία.':tab==='active'?'Καμία παραγγελία σε αναμονή.':tab==='ready'?'Καμία έτοιμη παραγγελία.':'Καμία παραλαβή τις τελευταίες 2 ημέρες.'}</div>`;
+ let html;
+ if(!list.length)html=`<div class="empty">${q?'Δεν βρέθηκε παραγγελία.':tab==='active'?'Καμία παραγγελία σε αναμονή.':tab==='ready'?'Καμία έτοιμη παραγγελία.':'Καμία παραλαβή τις τελευταίες 30 ημέρες.'}</div>`;
+ else if(tab==='done'&&!q){ // grouped by day, newest first
+  const by={};list.forEach(o=>{(by[dayKey(doneAt(o))]=by[dayKey(doneAt(o))]||[]).push(o)});
+  html=Object.keys(by).sort().reverse().map(k=>{const l=by[k].sort((a,b)=>doneAt(b)-doneAt(a));
+   return `<h2 class="day">${esc(dayLabel(k))}<span>${l.length} ${l.length===1?'παραγγελία':'παραγγελίες'} · ${units(l)} τεμάχια</span></h2>`+l.map(ticket).join('')}).join('');
+ }else html=[...list].sort((a,b)=>a.at-b.at).map(ticket).join(''); // oldest first to prepare
+ $('grid').innerHTML=html;
  if(focus){const t=$('grid').querySelector(`[data-id="${CSS.escape(focus)}"] .note`);if(t){t.focus();t.selectionStart=t.selectionEnd=t.value.length}}
  const waiting=groups.active.length;document.title=(waiting?`(${waiting}) `:'')+'Campus Store · Προσωπικό';
 }
@@ -169,6 +193,7 @@ function onList(list){
 
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));paint()});
 $('q').addEventListener('input',paint);
+$('day').addEventListener('change',paint);
 $('grid').addEventListener('input',e=>{if(e.target.classList.contains('note'))drafts[e.target.closest('.t').dataset.id]=e.target.value});
 $('grid').addEventListener('click',async e=>{
  const b=e.target.closest('.acts button');if(!b)return;

@@ -55,7 +55,7 @@
       newCode,
       watchMine: cb => S.onSnapshot(S.query(S.collection(db, 'orders'), S.where('uid', '==', me().uid)),
         snap => cb(snap.docs.map(mapOrder).sort((a, b) => b.at - a.at).slice(0, 40)), () => cb(null)),
-      watchAll: (cb, err) => S.onSnapshot(S.query(S.collection(db, 'orders'), S.orderBy('createdAt', 'desc'), S.limit(200)),
+      watchAll: (cb, err) => S.onSnapshot(S.query(S.collection(db, 'orders'), S.orderBy('createdAt', 'desc'), S.limit(600)),
         snap => cb(snap.docs.map(mapOrder)), e => err && err(e)),
       setStatus: (id, status, note) => S.updateDoc(S.doc(db, 'orders', id), { status, staffNote: note || '', updatedAt: S.serverTimestamp() }),
       del: async () => {
