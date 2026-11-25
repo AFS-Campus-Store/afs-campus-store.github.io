@@ -84,6 +84,13 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
 .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;border-radius:10px;padding:0}
 .eye svg{width:22px;height:22px}
 .eye:hover{color:var(--ink)}
+.st.cancelled{background:transparent;color:var(--red);border:1px solid var(--red)}
+.t.cancelled{opacity:.8;border-style:dashed}
+.cby{margin:6px 0 0;color:var(--red);font-weight:700;font-size:14px}
+.b-cancel{grid-column:1/-1;background:transparent;color:var(--red);font-weight:600!important;text-decoration:underline;min-height:40px!important}
+.b-cancel.arm{background:var(--red);color:#fff;text-decoration:none}
+.toasts{position:fixed;right:16px;bottom:16px;z-index:20;display:grid;gap:8px;max-width:min(420px,calc(100% - 32px))}
+.toast{background:var(--red);color:#fff;font-weight:700;padding:14px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);cursor:pointer}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
 </style>
@@ -96,6 +103,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   <button class="tab on" data-t="active">Προς ετοιμασία<b id="n-active">0</b></button>
   <button class="tab" data-t="ready">Έτοιμες<b id="n-ready">0</b></button>
   <button class="tab" data-t="done" title="Ο αριθμός δείχνει τις σημερινές παραλαβές">Παραλήφθηκαν<b id="n-done">0</b></button>
+  <button class="tab" data-t="cancelled" title="Ο αριθμός δείχνει τις σημερινές ακυρώσεις">Ακυρωμένες<b id="n-cancelled">0</b></button>
  </nav>
 </header>
 
@@ -113,6 +121,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   <div class="err" id="aErr"></div>
  </section>
 
+ <div id="toasts" class="toasts" aria-live="assertive"></div>
  <section id="board" hidden>
   <div class="tools">
    <input type="search" id="q" placeholder="Αναζήτηση: κωδικός, όνομα ή τηλέφωνο" autocomplete="off">
@@ -156,16 +165,18 @@ function ticket(o){
  const note=drafts[o.id]!==undefined?drafts[o.id]:(o.staffNote||'');
  const tel=String(o.phone||'').replace(/[^\d+]/g,'');
  return `<article class="t ${st.c}${fresh?' fresh':''}" data-id="${esc(o.id)}">
-  <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}${o.status==='done'&&o.upd?' '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})):''}</span></div>
+  <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}${(o.status==='done'||o.status==='cancelled')&&o.upd?' '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})):''}</span></div>
+  ${o.status==='cancelled'?`<p class="cby">${o.cancelledBy==='customer'?'Ακυρώθηκε από τον πελάτη':'Ακυρώθηκε από το κατάστημα'}</p>`:''}
   <div class="who">${esc(o.name)}</div>
-  <div class="meta"><span>${o.status==='done'?'Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
+  <div class="meta"><span>${o.status==='done'||o.status==='cancelled'?'Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
   ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}
   <ul class="items">${lines(o).map(l=>`<li><span>${esc(l.n)}</span><b>× ${esc(l.q)}</b></li>`).join('')}</ul>
   ${o.notes?`<p class="cnote"><b>Σχόλιο πελάτη:</b> ${esc(o.notes)}</p>`:''}
-  ${o.status==='done'?'':`<textarea class="note" placeholder="Σημείωμα για τον πελάτη (π.χ. τι λείπει)">${esc(note)}</textarea>`}
+  ${o.status==='done'||o.status==='cancelled'?(o.staffNote?`<p class="cnote"><b>Σημείωμα:</b> ${esc(o.staffNote)}</p>`:''):`<textarea class="note" placeholder="Σημείωμα για τον πελάτη (π.χ. τι λείπει)">${esc(note)}</textarea>`}
   <div class="acts">${o.status==='done'
    ?`<button class="b-back" data-s="ready">Επαναφορά στις έτοιμες</button>`
-   :`<button class="b-ready" data-s="ready"${o.status==='ready'?' disabled':''}>✓ Έτοιμη</button><button class="b-issue" data-s="issue">⚠ Λείπει κάτι</button><button class="b-done" data-s="done">Παραλήφθηκε</button>`}</div>
+   :o.status==='cancelled'?`<button class="b-back" data-s="new">Επαναφορά (ενεργή ξανά)</button>`
+   :`<button class="b-ready" data-s="ready"${o.status==='ready'?' disabled':''}>✓ Έτοιμη</button><button class="b-issue" data-s="issue">⚠ Λείπει κάτι</button><button class="b-done" data-s="done">Παραλήφθηκε</button><button class="b-cancel" data-s="cancelled">Ακύρωση παραγγελίας</button>`}</div>
   <div class="err"></div></article>`;
 }
 
@@ -177,22 +188,24 @@ const units=l=>l.reduce((a,o)=>a+lines(o).reduce((x,y)=>x+(+y.q||0),0),0);
 function paint(){
  const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
  const month=Date.now()-30*864e5,today=dayKey(new Date());
- const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&doneAt(o)>month)};
+ const groups={active:orders.filter(o=>o.status==='new'||o.status==='issue'),ready:orders.filter(o=>o.status==='ready'),done:orders.filter(o=>o.status==='done'&&doneAt(o)>month),cancelled:orders.filter(o=>o.status==='cancelled'&&doneAt(o)>month)};
  $('n-active').textContent=groups.active.length;$('n-ready').textContent=groups.ready.length;
  $('n-done').textContent=groups.done.filter(o=>dayKey(doneAt(o))===today).length; // picked up today
+ $('n-cancelled').textContent=groups.cancelled.filter(o=>dayKey(doneAt(o))===today).length;
+ const hist=tab==='done'||tab==='cancelled';
  // day picker for the picked-up tab
- const days={};groups.done.forEach(o=>{const k=dayKey(doneAt(o));days[k]=(days[k]||0)+1});
+ const days={};(hist?groups[tab]:[]).forEach(o=>{const k=dayKey(doneAt(o));days[k]=(days[k]||0)+1});
  const sel=$('day'),cur=sel.value;
- sel.innerHTML=`<option value="">Όλες οι ημέρες (${groups.done.length})</option>`+Object.keys(days).sort().reverse().map(k=>`<option value="${k}">${esc(dayLabel(k))} (${days[k]})</option>`).join('');
+ sel.innerHTML=`<option value="">Όλες οι ημέρες (${hist?groups[tab].length:0})</option>`+Object.keys(days).sort().reverse().map(k=>`<option value="${k}">${esc(dayLabel(k))} (${days[k]})</option>`).join('');
  sel.value=days[cur]?cur:'';
- $('dayBox').hidden=tab!=='done'||!!q;
+ $('dayBox').hidden=!hist||!!q;
  let list=groups[tab];
- if(tab==='done'&&sel.value)list=list.filter(o=>dayKey(doneAt(o))===sel.value);
+ if(hist&&sel.value)list=list.filter(o=>dayKey(doneAt(o))===sel.value);
  if(q)list=orders.filter(o=>[o.code,o.name,o.phone].some(v=>String(v||'').toLowerCase().includes(q)));
  const focus=document.activeElement&&document.activeElement.classList.contains('note')?document.activeElement.closest('.t').dataset.id:null;
  let html;
- if(!list.length)html=`<div class="empty">${q?'Δεν βρέθηκε παραγγελία.':tab==='active'?'Καμία παραγγελία σε αναμονή.':tab==='ready'?'Καμία έτοιμη παραγγελία.':'Καμία παραλαβή τις τελευταίες 30 ημέρες.'}</div>`;
- else if(tab==='done'&&!q){ // grouped by day, newest first
+ if(!list.length)html=`<div class="empty">${q?'Δεν βρέθηκε παραγγελία.':tab==='active'?'Καμία παραγγελία σε αναμονή.':tab==='ready'?'Καμία έτοιμη παραγγελία.':tab==='done'?'Καμία παραλαβή τις τελευταίες 30 ημέρες.':'Καμία ακύρωση τις τελευταίες 30 ημέρες.'}</div>`;
+ else if(hist&&!q){ // grouped by day, newest first
   const by={};list.forEach(o=>{(by[dayKey(doneAt(o))]=by[dayKey(doneAt(o))]||[]).push(o)});
   html=Object.keys(by).sort().reverse().map(k=>{const l=by[k].sort((a,b)=>doneAt(b)-doneAt(a));
    return `<h2 class="day">${esc(dayLabel(k))}<span>${l.length} ${l.length===1?'παραγγελία':'παραγγελίες'} · ${units(l)} τεμάχια</span></h2>`+l.map(ticket).join('')}).join('');
@@ -204,8 +217,12 @@ function paint(){
 
 function beep(){if(!$('sound').checked)return;try{const a=new (window.AudioContext||window.webkitAudioContext)();[0,.18].forEach(t=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;g.gain.value=.15;o.connect(g).connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+.12)})}catch(e){}}
 
+let prevSt={};
+function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;$('toasts').appendChild(el);setTimeout(()=>el.remove(),12000);el.addEventListener('click',()=>el.remove())}
 function onList(list){
- if(seen){const fresh=list.filter(o=>!seen.has(o.id));if(fresh.length)beep()}
+ if(seen){const fresh=list.filter(o=>!seen.has(o.id));if(fresh.length)beep()
+  list.forEach(o=>{if(prevSt[o.id]&&prevSt[o.id]!=='cancelled'&&o.status==='cancelled'&&o.cancelledBy==='customer'){toast(`Ο πελάτης ακύρωσε την παραγγελία #${o.code||''} (${o.name||''})`);beep()}})}
+ prevSt={};list.forEach(o=>prevSt[o.id]=o.status);
  seen=new Set(list.map(o=>o.id));orders=list;paint();
 }
 
@@ -216,9 +233,10 @@ $('grid').addEventListener('input',e=>{if(e.target.classList.contains('note'))dr
 $('grid').addEventListener('click',async e=>{
  const b=e.target.closest('.acts button');if(!b)return;
  const t=b.closest('.t'),id=t.dataset.id,s=b.dataset.s,ta=t.querySelector('.note'),note=ta?ta.value.trim():'';
+ if(s==='cancelled'&&!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Πατήστε ξανά για ακύρωση (το σημείωμα θα το δει ο πελάτης)';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Ακύρωση παραγγελίας'}},6000);return}
  if(s==='issue'&&!note){t.querySelector('.err').textContent='Γράψε στο σημείωμα τι λείπει, για να το δει ο πελάτης.';ta&&ta.focus();return}
  t.querySelectorAll('button').forEach(x=>x.disabled=true);
- try{await API.setStatus(id,s,s==='done'?(orders.find(o=>o.id===id)||{}).staffNote||note:note);delete drafts[id]}
+ try{await API.setStatus(id,s,s==='done'?(orders.find(o=>o.id===id)||{}).staffNote||note:s==='new'?'':note);delete drafts[id]}
  catch(er){t.querySelector('.err').textContent=msg(er);t.querySelectorAll('button').forEach(x=>x.disabled=false)}
 });
 $('sound').addEventListener('change',()=>{try{localStorage.setItem('cs_staff_sound',$('sound').checked?'1':'')}catch(e){};beep()});

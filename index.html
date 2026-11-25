@@ -124,6 +124,11 @@ h4{font-size:15px;margin:22px 0 4px}
 .eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;border-radius:10px;padding:0}
 .eye svg{width:22px;height:22px}
 .eye:hover{color:var(--ink)}
+.st.cancelled{background:transparent;color:var(--red);border:1px solid var(--red)}
+.live.cancelled{border-color:var(--red)}
+.cxl{margin-top:8px;border:0;background:none;color:var(--red);font-weight:600;font-size:14px;padding:6px 0;min-height:40px;text-decoration:underline;text-underline-offset:3px}
+.cxl.arm{background:var(--red);color:#fff;text-decoration:none;border-radius:10px;padding:6px 14px}
+.cerr{display:block;color:var(--red);font-size:13px}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -516,6 +521,7 @@ $('forgotBtn').addEventListener('click',async()=>{const em=$('aEmail').value.tri
 /* account */
 function fmtDate(d){return d.toLocaleDateString('el-GR',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})}
 function stBadge(o){const st=STATUS[o.status]||STATUS.new;
+ if(o.status==='cancelled')return `<span class="st cancelled">Ακυρώθηκε${o.cancelledBy==='store'?' από το κατάστημα':''}</span>`;
  const when=o.status==='done'&&o.upd?' '+(new Date().toDateString()===o.upd.toDateString()?'σήμερα':o.upd.toLocaleDateString('el-GR',{day:'numeric',month:'short'}))+' '+o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}):'';
  return `<span class="st ${st.c}">${st.t}${esc(when)}</span>`}
 function itemsList(o){return ORDER.filter(id=>o.items&&o.items[id]).map(id=>`<li>${esc(VAR[id].n)} × ${o.items[id]}</li>`).join('')}
@@ -538,17 +544,25 @@ $('history').addEventListener('click',e=>{const b=e.target.closest('.again');if(
  cart={};ORDER.forEach(id=>{if(o.items[id])cart[id]=Math.min(o.items[id],MAX)});render();openCheckout()});
 /* active orders strip on the main page (guests too) */
 function paintLive(){
- const week=Date.now()-7*864e5;
- const act=myOrders.filter(o=>o.status!=='done'&&o.at.getTime()>week);
+ const week=Date.now()-7*864e5,day=Date.now()-864e5;
+ // active orders, plus orders the store cancelled in the last 24 hours (so the customer sees why)
+ const act=myOrders.filter(o=>o.at.getTime()>week&&o.status!=='done'&&(o.status!=='cancelled'||(o.cancelledBy==='store'&&(o.upd||o.at).getTime()>day)));
  $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σας</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
-  <p class="ldesc">${esc(st.d)}${pickupTxt(o)?' · '+esc(pickupTxt(o)):''}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+  <p class="ldesc">${o.status==='cancelled'?'Η παραγγελία ακυρώθηκε από το κατάστημα.':esc(st.d)+(pickupTxt(o)?' · '+esc(pickupTxt(o)):'')}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+  ${o.status!=='cancelled'?`<button class="cxl" type="button" data-id="${esc(o.id)}">Ακύρωση παραγγελίας</button><span class="cerr"></span>`:''}
   <details><summary>${(n=>n===1?'1 τεμάχιο':n+' τεμάχια')(Object.values(o.items||{}).reduce((a,b)=>a+b,0))}</summary><ul>${itemsList(o)}</ul></details></div>`}).join(''):'';
 }
+$('live').addEventListener('click',async e=>{
+ const b=e.target.closest('.cxl');if(!b)return;
+ if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Πατήστε ξανά για να ακυρωθεί';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Ακύρωση παραγγελίας'}},5000);return}
+ b.disabled=true;b.textContent='Ακύρωση…';
+ try{await API.cancel(b.dataset.id)}catch(er){b.disabled=false;b.classList.remove('arm');b.textContent='Ακύρωση παραγγελίας';b.nextElementSibling.textContent=msg(er)}
+});
 let lastSt={};
 function onOrders(list){
  if(!list)return;
  // gentle buzz when an order becomes ready while the app is open
- list.forEach(o=>{if(lastSt[o.id]&&lastSt[o.id]!==o.status&&(o.status==='ready'||o.status==='issue')&&navigator.vibrate)navigator.vibrate([120,60,120]);lastSt[o.id]=o.status});
+ list.forEach(o=>{if(lastSt[o.id]&&lastSt[o.id]!==o.status&&(o.status==='ready'||o.status==='issue'||(o.status==='cancelled'&&o.cancelledBy==='store'))&&navigator.vibrate)navigator.vibrate([120,60,120]);lastSt[o.id]=o.status});
  myOrders=list;paintLive();paintHistory();
 }
 $('saveBtn').addEventListener('click',async()=>{const p={name:$('pName').value.trim(),phone:$('pPhone').value.trim()};

@@ -57,7 +57,8 @@
         snap => cb(snap.docs.map(mapOrder).sort((a, b) => b.at - a.at).slice(0, 40)), () => cb(null)),
       watchAll: (cb, err) => S.onSnapshot(S.query(S.collection(db, 'orders'), S.orderBy('createdAt', 'desc'), S.limit(600)),
         snap => cb(snap.docs.map(mapOrder)), e => err && err(e)),
-      setStatus: (id, status, note) => S.updateDoc(S.doc(db, 'orders', id), { status, staffNote: note || '', updatedAt: S.serverTimestamp() }),
+      setStatus: (id, status, note) => S.updateDoc(S.doc(db, 'orders', id), { status, staffNote: note || '', cancelledBy: status === 'cancelled' ? 'store' : '', updatedAt: S.serverTimestamp() }),
+      cancel: id => S.updateDoc(S.doc(db, 'orders', id), { status: 'cancelled', cancelledBy: 'customer', updatedAt: S.serverTimestamp() }),
       del: async () => {
         const mine = await S.getDocs(S.query(S.collection(db, 'orders'), S.where('uid', '==', me().uid)));
         await Promise.all(mine.docs.map(d => S.deleteDoc(d.ref)));
@@ -108,7 +109,8 @@
       newCode,
       watchMine: cb => watch(() => cb(db.orders.filter(o => o.uid === db.cur).map(mapO))),
       watchAll: cb => watch(() => cb(db.orders.map(mapO))),
-      setStatus: async (id, status, note) => { const o = db.orders.find(x => x.id === id); if (o) { o.status = status; o.staffNote = note || ''; o.upd = new Date().toISOString(); save(); } },
+      setStatus: async (id, status, note) => { const o = db.orders.find(x => x.id === id); if (o) { o.status = status; o.staffNote = note || ''; o.cancelledBy = status === 'cancelled' ? 'store' : ''; o.upd = new Date().toISOString(); save(); } },
+      cancel: async id => { const o = db.orders.find(x => x.id === id && x.uid === db.cur); if (o && !['done', 'cancelled'].includes(o.status)) { o.status = 'cancelled'; o.cancelledBy = 'customer'; o.upd = new Date().toISOString(); save(); } },
       del: async () => { db.orders = db.orders.filter(o => o.uid !== db.cur); delete db.users[db.cur]; db.cur = null; save(); emitAuth(); }
     };
   }
@@ -131,7 +133,8 @@
     new: { t: 'Καταχωρήθηκε', d: 'Η παραγγελία σας ετοιμάζεται.', c: 'new' },
     ready: { t: 'Έτοιμη για παραλαβή', d: 'Σας περιμένει στο Campus Store. Ώρες παραλαβής: 9:00–11:30 και 13:00–16:00. Μετά τις 16:00 τα προϊόντα επιστρέφουν στο ράφι, εκτός αν μας έχετε ενημερώσει για άλλη ώρα.', c: 'ready' },
     issue: { t: 'Λείπει κάτι', d: 'Δείτε το σημείωμα του καταστήματος.', c: 'issue' },
-    done: { t: 'Παραλήφθηκε', d: '', c: 'done' }
+    done: { t: 'Παραλήφθηκε', d: '', c: 'done' },
+    cancelled: { t: 'Ακυρώθηκε', d: 'Η παραγγελία ακυρώθηκε.', c: 'cancelled' }
   };
 
   async function start() {
