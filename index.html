@@ -129,6 +129,7 @@ h4{font-size:15px;margin:22px 0 4px}
 .live.cancelled{border-color:var(--red)}
 .cxl{margin-top:8px;border:0;background:none;color:var(--red);font-weight:600;font-size:14px;padding:6px 0;min-height:40px;text-decoration:underline;text-underline-offset:3px}
 .cxl.arm{background:var(--red);color:#fff;text-decoration:none;border-radius:10px;padding:6px 14px}
+.seen{margin-top:10px;width:100%;border:1.5px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font-weight:700;min-height:46px}
 .cerr{display:block;color:var(--red);font-size:13px}
 #login.welcome [data-close]{display:none}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
@@ -548,15 +549,17 @@ $('history').addEventListener('click',e=>{const b=e.target.closest('.again');if(
  cart={};ORDER.forEach(id=>{if(o.items[id])cart[id]=Math.min(o.items[id],MAX)});render();openCheckout()});
 /* active orders strip on the main page (guests too) */
 function paintLive(){
- const week=Date.now()-7*864e5,day=Date.now()-864e5;
- // active orders, plus orders the store cancelled in the last 24 hours (so the customer sees why)
- const act=myOrders.filter(o=>o.at.getTime()>week&&o.status!=='done'&&(o.status!=='cancelled'||(o.cancelledBy==='store'&&(o.upd||o.at).getTime()>day)));
+ const week=Date.now()-7*864e5,seen=ls.get('cs_dismissed')||[];
+ // active orders, plus orders the store cancelled, until the customer taps "Παράλειψη"
+ const act=myOrders.filter(o=>o.at.getTime()>week&&o.status!=='done'&&(o.status!=='cancelled'||(o.cancelledBy==='store'&&!seen.includes(o.id))));
  $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σας</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
   <p class="ldesc">${o.status==='cancelled'?'Η παραγγελία ακυρώθηκε από το κατάστημα.':esc(st.d)+(pickupTxt(o)?' · '+esc(pickupTxt(o)):'')}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
-  ${o.status!=='cancelled'?`<button class="cxl" type="button" data-id="${esc(o.id)}">Ακύρωση παραγγελίας</button><span class="cerr"></span>`:''}
+  ${o.status!=='cancelled'?`<button class="cxl" type="button" data-id="${esc(o.id)}">Ακύρωση παραγγελίας</button><span class="cerr"></span>`:`<button class="seen" type="button" data-id="${esc(o.id)}">Παράλειψη</button>`}
   <details><summary>${(n=>n===1?'1 τεμάχιο':n+' τεμάχια')(Object.values(o.items||{}).reduce((a,b)=>a+b,0))}</summary><ul>${itemsList(o)}</ul></details></div>`}).join(''):'';
 }
 $('live').addEventListener('click',async e=>{
+ const ok=e.target.closest('.seen');
+ if(ok){const l=(ls.get('cs_dismissed')||[]).filter(x=>x!==ok.dataset.id);l.push(ok.dataset.id);ls.set('cs_dismissed',l.slice(-50));paintLive();return}
  const b=e.target.closest('.cxl');if(!b)return;
  if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Πατήστε ξανά για να ακυρωθεί';setTimeout(()=>{if(b.isConnected){b.classList.remove('arm');b.textContent='Ακύρωση παραγγελίας'}},5000);return}
  b.disabled=true;b.textContent='Ακύρωση…';
