@@ -150,7 +150,9 @@ h4{font-size:15px;margin:22px 0 4px}
 .oos{display:inline-block;margin-left:6px;font-size:12px;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:999px;padding:1px 8px;white-space:nowrap}
 .head .oos{margin:6px 0 0}
 .card.allout .pic{filter:grayscale(1);opacity:.6}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;width:min(92vw,460px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.clear{display:block;margin:-6px 0 6px auto;border:0;background:none;color:var(--red);font-weight:600;font-size:14px;min-height:40px;padding:0 4px;text-decoration:underline;text-underline-offset:3px}
+.toast .undo{margin-left:12px;border:0;background:var(--yolk);color:var(--yolk-ink);font-weight:800;border-radius:10px;padding:8px 14px;min-height:40px}
+.toast{display:flex;align-items:center;justify-content:space-between;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;width:min(92vw,460px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .announce{margin:18px 0 0;padding:12px 16px;border-radius:14px;background:var(--yolk);color:var(--yolk-ink);font-weight:700;white-space:pre-line}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
@@ -296,6 +298,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
   <div id="checkout">
    <div class="ptop"><h2 id="sheetTitle">Η παραγγελία σας</h2><button class="x" data-close aria-label="Κλείσιμο">✕</button></div>
    <div class="sum" id="sum"></div>
+   <button class="clear" type="button" id="clearCart">🗑 Άδειασμα καλαθιού</button>
    <form id="form" novalidate>
     <label for="name">Ονοματεπώνυμο *</label>
     <input type="text" id="name" autocomplete="name" required>
@@ -432,6 +435,15 @@ $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.i
  </div>`).join('')}</section>`).join('');
 
 function notice(t){document.querySelectorAll('.toast').forEach(x=>x.remove());const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),6000);el.addEventListener('click',()=>el.remove())}
+/* empty the whole basket, with a few seconds to undo */
+$('clearCart').addEventListener('click',()=>{
+ const saved={...cart};if(!Object.keys(saved).length)return;
+ cart={};render();closeSheet();
+ document.querySelectorAll('.toast').forEach(x=>x.remove());
+ const el=document.createElement('div');el.className='toast';el.innerHTML='<span>Το καλάθι άδειασε.</span><button type="button" class="undo">Αναίρεση</button>';
+ document.body.appendChild(el);const t=setTimeout(()=>el.remove(),8000);
+ el.querySelector('.undo').addEventListener('click',()=>{clearTimeout(t);el.remove();cart=clean(saved);render()});
+});
 function onStock(m){
  stock=m||{};
  const gone=Object.keys(cart).filter(isOut);
