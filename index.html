@@ -119,6 +119,11 @@ h4{font-size:15px;margin:22px 0 4px}
 .dcode{margin:4px auto 10px;padding:12px;border-radius:14px;background:var(--card);border:1px solid var(--line);max-width:320px;font-size:14px;color:var(--muted)}
 .dcode b{display:block;font-size:30px;letter-spacing:.08em;color:var(--ink);margin:2px 0}
 .dcode small{display:block;font-size:13px}
+.pw{position:relative;display:block}
+.pw input{padding-right:52px!important}
+.eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;border-radius:10px;padding:0}
+.eye svg{width:22px;height:22px}
+.eye:hover{color:var(--ink)}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -332,6 +337,19 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 <script src="backend.js"></script>
 <script>
 {
+/* eye button on password fields: tap to show / hide what was typed */
+{
+ const open='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+ const shut='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7a10.6 10.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+ document.querySelectorAll('input[type=password]').forEach(inp=>{
+  const w=document.createElement('span');w.className='pw';inp.parentNode.insertBefore(w,inp);w.appendChild(inp);
+  const b=document.createElement('button');b.type='button';b.className='eye';b.innerHTML=open;b.setAttribute('aria-label','Εμφάνιση κωδικού');b.setAttribute('aria-pressed','false');w.appendChild(b);
+  b.addEventListener('click',()=>{const show=inp.type==='password';inp.type=show?'text':'password';b.innerHTML=show?shut:open;
+   b.setAttribute('aria-label',show?'Απόκρυψη κωδικού':'Εμφάνιση κωδικού');b.setAttribute('aria-pressed',String(show));inp.focus({preventScroll:true})});
+  inp.form&&inp.form.addEventListener('submit',()=>{inp.type='password';b.innerHTML=open}); // hide again after sending
+ });
+}
+
 const FORM='https://docs.google.com/forms/d/e/1FAIpQLSfAw7LwrC6KE5d6tOb34ZENgIA9S87tzKIu-SmHJJx7KbBj3Q/formResponse';
 const F={name:'entry.1144251029',phone:'entry.1676391153',notes:'entry.568540506'};
 const MAX=10;
