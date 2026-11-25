@@ -2,7 +2,7 @@
 // Always asks GitHub for the newest files when online (so updates show up at once),
 // and falls back to the saved copy when offline.
 // Change VERSION whenever you upload new files.
-const VERSION = 'campus-store-v22';
+const VERSION = 'campus-store-v24';
 const SHELL = ['./', 'index.html', 'manifest.json', 'firebase-config.js', 'backend.js', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
