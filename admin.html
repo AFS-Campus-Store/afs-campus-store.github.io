@@ -156,9 +156,9 @@ function ticket(o){
  const note=drafts[o.id]!==undefined?drafts[o.id]:(o.staffNote||'');
  const tel=String(o.phone||'').replace(/[^\d+]/g,'');
  return `<article class="t ${st.c}${fresh?' fresh':''}" data-id="${esc(o.id)}">
-  <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}</span></div>
+  <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="st ${st.c}">${st.t}${o.status==='done'&&o.upd?' '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})):''}</span></div>
   <div class="who">${esc(o.name)}</div>
-  <div class="meta"><span>${o.status==='done'&&o.upd?'Παραλήφθηκε '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}))+' · Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
+  <div class="meta"><span>${o.status==='done'?'Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
   ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}
   <ul class="items">${lines(o).map(l=>`<li><span>${esc(l.n)}</span><b>× ${esc(l.q)}</b></li>`).join('')}</ul>
   ${o.notes?`<p class="cnote"><b>Σχόλιο πελάτη:</b> ${esc(o.notes)}</p>`:''}

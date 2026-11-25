@@ -515,7 +515,9 @@ $('forgotBtn').addEventListener('click',async()=>{const em=$('aEmail').value.tri
 
 /* account */
 function fmtDate(d){return d.toLocaleDateString('el-GR',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})}
-function stBadge(o){const st=STATUS[o.status]||STATUS.new;return `<span class="st ${st.c}">${st.t}</span>`}
+function stBadge(o){const st=STATUS[o.status]||STATUS.new;
+ const when=o.status==='done'&&o.upd?' '+(new Date().toDateString()===o.upd.toDateString()?'σήμερα':o.upd.toLocaleDateString('el-GR',{day:'numeric',month:'short'}))+' '+o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}):'';
+ return `<span class="st ${st.c}">${st.t}${esc(when)}</span>`}
 function itemsList(o){return ORDER.filter(id=>o.items&&o.items[id]).map(id=>`<li>${esc(VAR[id].n)} × ${o.items[id]}</li>`).join('')}
 function pickupTxt(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'}):''}
 function paintHistory(){
