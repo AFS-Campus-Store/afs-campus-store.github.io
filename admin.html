@@ -271,9 +271,10 @@ function onStock(m){stock=m||{};countOut();if(tab==='stock')paintStock()}
 let histDay=null; // day shown in Παραλήφθηκαν / Ακυρωμένες ('' = all days)
 /* preparation list: total quantities per product for a pickup day */
 let prepDay='',prepScope='open';
+// pickup day the customer asked for (order day, or the day they chose)
 const pickKey=o=>o.pickup&&o.pickup!=='today'?o.pickup:dk(o.at);
 function prepData(day,scope){
- const ok=o=>o.status!=='cancelled'&&(scope==='all'||o.status==='new'||o.status==='issue')&&pickKey(o)===day; // 'open' = still to prepare (not ready, not picked up)
+ const ok=o=>(o.status==='new'||o.status==='issue')&&pickKey(o)===day; // only 'Προς ετοιμασία' orders for exactly that pickup day
  const list=orders.filter(ok),tot={},names={},cnt={};
  list.forEach(o=>lines(o).forEach(l=>{const k=l.id||l.n;tot[k]=(tot[k]||0)+(+l.q||0);names[k]=l.n;cnt[k]=(cnt[k]||0)+1}));
  const groups=[],used=new Set();
@@ -290,9 +291,8 @@ function paintPrep(){
  days.add(day);
  const d=prepData(day,prepScope);
  $('prepList').innerHTML=`<div class="ptools"><label class="chk">Ημέρα παραλαβής <select id="pDay">${[...days].sort().map(k=>`<option value="${k}"${k===day?' selected':''}>${esc(dayName(k))}</option>`).join('')}</select></label>
-  <label class="chk">Μετράει <select id="pScope"><option value="open"${prepScope==='open'?' selected':''}>Μόνο προς ετοιμασία</option><option value="all"${prepScope==='all'?' selected':''}>Όλη την ημέρα (και παραλαβές)</option></select></label>
   <button class="exp" id="pPrint" type="button"${d.units?'':' disabled'}>🖨 Εκτύπωση λίστας</button></div>
-  <p class="psum"><b>${d.units}</b> τεμάχια · <b>${d.orders}</b> ${d.orders===1?'παραγγελία':'παραγγελίες'}</p>
+  <p class="psum"><b>${d.units}</b> ${d.units===1?'τεμάχιο':'τεμάχια'} · <b>${d.orders}</b> ${d.orders===1?'παραγγελία':'παραγγελίες'}</p>
   ${d.groups.length?d.groups.map(g=>`<h2 class="day">${esc(g.name)}</h2><div class="plist">${g.rows.map(r=>`<div class="prow"><span>${esc(r.n)}<small>${r.c} ${r.c===1?'παραγγελία':'παραγγελίες'}</small></span><b>${r.q}</b></div>`).join('')}</div>`).join('')
    :'<div class="empty">Δεν υπάρχουν προϊόντα για ετοιμασία αυτή την ημέρα.</div>'}`;
 }
@@ -300,7 +300,7 @@ function prepReceipt(){
  const day=prepDay&&prepDay>=dk(new Date())?prepDay:dk(new Date()),d=prepData(day,prepScope);
  return `<div class="rc" style="--pw:${paper()==='58'?'48mm':'72mm'}"><div class="shop">CAMPUS STORE<br><span style="font-weight:400;font-size:10pt">Λίστα ετοιμασίας</span></div>
   <div class="pk">${esc(caps(dayName(day)))}</div>
-  <div class="row"><span>${prepScope==='all'?'Όλη η ημέρα':'Προς ετοιμασία'}</span><span>${d.orders} παραγγ.</span></div>
+  <div class="row"><span>Προς ετοιμασία</span><span>${d.orders} παραγγ.</span></div>
   ${d.groups.map(g=>`<div style="font-weight:900;margin-top:2mm">${esc(caps(g.name))}</div><table>${g.rows.map(r=>`<tr><td>${esc(r.n)}</td><td class="q">${r.q}</td></tr>`).join('')}</table>`).join('')}
   <div class="row"><b>Σύνολο τεμαχίων</b><b>${d.units}</b></div>
   <div class="foot">Τυπώθηκε ${esc(new Date().toLocaleString('el-GR',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}))}</div><div class="cut"></div></div>`;
@@ -353,7 +353,7 @@ function onList(list){
  seen=new Set(list.map(o=>o.id));orders=list;paint();
 }
 
-$('prepList').addEventListener('change',e=>{if(e.target.id==='pDay')prepDay=e.target.value;if(e.target.id==='pScope')prepScope=e.target.value;paintPrep()});
+$('prepList').addEventListener('change',e=>{if(e.target.id==='pDay')prepDay=e.target.value;paintPrep()});
 $('prepList').addEventListener('click',e=>{if(e.target.closest('#pPrint')){$('printArea').innerHTML=`<style>@page{size:${paper()}mm auto;margin:0}</style>`+prepReceipt();window.print()}});
 $('stockList').addEventListener('click',async e=>{
  const b=e.target.closest('.seg3 button');if(!b)return;const id=b.closest('.srow').dataset.id,v=b.dataset.v;
