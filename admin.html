@@ -137,6 +137,16 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
 .seg3 button.on{background:#2f6b40;color:#fff}
 .srow.is-out .seg3 button.on{background:var(--red);color:#fff}
 @media(max-width:600px){.seg3{width:100%}.seg3 button{flex:1;padding:0 6px;font-size:13px}}
+.ptools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px}
+.ptools select{font-size:15px;border:1.5px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;min-height:44px;color:var(--ink)}
+.psum{font-size:18px;margin:6px 0 4px}
+.plist{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-top:8px}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0}
+.prow span{font-weight:600}
+.prow small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.prow b{font-size:26px;font-variant-numeric:tabular-nums;min-width:2.5ch;text-align:right}
+#prepList .day:first-of-type{margin-top:12px}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
 </style>
@@ -150,6 +160,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   <button class="tab" data-t="ready">Έτοιμες<b id="n-ready">0</b></button>
   <button class="tab" data-t="done" title="Ο αριθμός δείχνει τις σημερινές παραλαβές">Παραλήφθηκαν<b id="n-done">0</b></button>
   <button class="tab" data-t="cancelled" title="Ο αριθμός δείχνει τις σημερινές ακυρώσεις">Ακυρωμένες<b id="n-cancelled">0</b></button>
+  <button class="tab" data-t="prep" title="Τεμάχια προς ετοιμασία για σήμερα">Λίστα ετοιμασίας<b id="n-prep">0</b></button>
   <button class="tab" data-t="stock" title="Ο αριθμός δείχνει πόσα προϊόντα δεν είναι διαθέσιμα">Διαθεσιμότητα<b id="n-stock">0</b></button>
  </nav>
 </header>
@@ -181,6 +192,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   </div>
   <div class="grid" id="grid"></div>
   <div id="stockList" hidden></div>
+  <div id="prepList" hidden></div>
  </section>
 </main>
 
@@ -211,7 +223,7 @@ const drafts={}; // staff notes being typed, kept across live refreshes
 function fmtTime(d){const t=d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'});
  return new Date().toDateString()===d.toDateString()?'Σήμερα '+t:d.toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'})+' '+t}
 function pick(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'}):''}
-function lines(o){if(o.lines&&o.lines.length)return o.lines;return Object.entries(o.items||{}).map(([id,q])=>({n:'Προϊόν '+id,q}))}
+function lines(o){if(o.lines&&o.lines.length)return o.lines;return Object.entries(o.items||{}).map(([id,q])=>({id,n:'Προϊόν '+id,q}))}
 
 const openIds=new Set();let allOpen=false; // which orders are expanded
 function ticket(o){
@@ -256,7 +268,45 @@ function paintStock(){
 }
 function countOut(){let n=0;window.CS_CATALOG.forEach(c=>c.items.forEach(it=>it.v.forEach(v=>{if(outState(v[0]))n++})));$('n-stock').textContent=n}
 function onStock(m){stock=m||{};countOut();if(tab==='stock')paintStock()}
+/* preparation list: total quantities per product for a pickup day */
+let prepDay='',prepScope='open';
+const pickKey=o=>o.pickup&&o.pickup!=='today'?o.pickup:dk(o.at);
+function prepData(day,scope){
+ const ok=o=>o.status!=='cancelled'&&(scope==='all'||o.status==='new'||o.status==='issue')&&pickKey(o)===day; // 'open' = still to prepare (not ready, not picked up)
+ const list=orders.filter(ok),tot={},names={},cnt={};
+ list.forEach(o=>lines(o).forEach(l=>{const k=l.id||l.n;tot[k]=(tot[k]||0)+(+l.q||0);names[k]=l.n;cnt[k]=(cnt[k]||0)+1}));
+ const groups=[],used=new Set();
+ window.CS_CATALOG.forEach(c=>{const rows=[];c.items.forEach(it=>it.v.forEach(([id,l])=>{if(tot[id]){rows.push({n:optName(it,l).replace(/\u00a0/g,' '),q:tot[id],c:cnt[id]});used.add(id)}}));if(rows.length)groups.push({name:c.name,rows})});
+ const other=Object.keys(tot).filter(k=>!used.has(k)).map(k=>({n:names[k],q:tot[k],c:cnt[k]}));
+ if(other.length)groups.push({name:'Άλλα',rows:other});
+ return {orders:list.length,units:Object.values(tot).reduce((a,b)=>a+b,0),groups};
+}
+function dayName(k){const t=dk(new Date()),tm=dk(new Date(Date.now()+864e5));const d=new Date(k+'T12:00').toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'});return k===t?'Σήμερα · '+d:k===tm?'Αύριο · '+d:d[0].toUpperCase()+d.slice(1)}
+function paintPrep(){
+ const today=dk(new Date()),tomorrow=dk(new Date(Date.now()+864e5));
+ const days=new Set([today,tomorrow]);orders.forEach(o=>{if((o.status==='new'||o.status==='issue')&&pickKey(o)>=today)days.add(pickKey(o))});
+ if(!prepDay||(!days.has(prepDay)&&prepDay<today))prepDay=today;days.add(prepDay);
+ const d=prepData(prepDay,prepScope);
+ $('prepList').innerHTML=`<div class="ptools"><label class="chk">Ημέρα παραλαβής <select id="pDay">${[...days].sort().map(k=>`<option value="${k}"${k===prepDay?' selected':''}>${esc(dayName(k))}</option>`).join('')}</select></label>
+  <label class="chk">Μετράει <select id="pScope"><option value="open"${prepScope==='open'?' selected':''}>Μόνο προς ετοιμασία</option><option value="all"${prepScope==='all'?' selected':''}>Όλη την ημέρα (και παραλαβές)</option></select></label>
+  <button class="exp" id="pPrint" type="button"${d.units?'':' disabled'}>🖨 Εκτύπωση λίστας</button></div>
+  <p class="psum"><b>${d.units}</b> τεμάχια · <b>${d.orders}</b> ${d.orders===1?'παραγγελία':'παραγγελίες'}</p>
+  ${d.groups.length?d.groups.map(g=>`<h2 class="day">${esc(g.name)}</h2><div class="plist">${g.rows.map(r=>`<div class="prow"><span>${esc(r.n)}<small>${r.c} ${r.c===1?'παραγγελία':'παραγγελίες'}</small></span><b>${r.q}</b></div>`).join('')}</div>`).join('')
+   :'<div class="empty">Δεν υπάρχουν προϊόντα για ετοιμασία αυτή την ημέρα.</div>'}`;
+}
+function prepReceipt(){
+ const d=prepData(prepDay,prepScope);
+ return `<div class="rc" style="--pw:${paper()==='58'?'48mm':'72mm'}"><div class="shop">CAMPUS STORE<br><span style="font-weight:400;font-size:10pt">Λίστα ετοιμασίας</span></div>
+  <div class="pk">${esc(caps(dayName(prepDay)))}</div>
+  <div class="row"><span>${prepScope==='all'?'Όλη η ημέρα':'Προς ετοιμασία'}</span><span>${d.orders} παραγγ.</span></div>
+  ${d.groups.map(g=>`<div style="font-weight:900;margin-top:2mm">${esc(caps(g.name))}</div><table>${g.rows.map(r=>`<tr><td>${esc(r.n)}</td><td class="q">${r.q}</td></tr>`).join('')}</table>`).join('')}
+  <div class="row"><b>Σύνολο τεμαχίων</b><b>${d.units}</b></div>
+  <div class="foot">Τυπώθηκε ${esc(new Date().toLocaleString('el-GR',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}))}</div><div class="cut"></div></div>`;
+}
 function paint(){
+ const isPrep=tab==='prep';$('prepList').hidden=!isPrep;
+ { const p=prepData(dk(new Date()),'open');$('n-prep').textContent=p.units; }
+ if(isPrep){$('grid').hidden=true;$('stockList').hidden=true;$('tools').hidden=true;paintPrep();return}
  const isStock=tab==='stock';$('grid').hidden=isStock;$('stockList').hidden=!isStock;$('tools').hidden=isStock;
  if(isStock){paintStock();countOut()}
  const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
@@ -300,6 +350,8 @@ function onList(list){
  seen=new Set(list.map(o=>o.id));orders=list;paint();
 }
 
+$('prepList').addEventListener('change',e=>{if(e.target.id==='pDay')prepDay=e.target.value;if(e.target.id==='pScope')prepScope=e.target.value;paintPrep()});
+$('prepList').addEventListener('click',e=>{if(e.target.closest('#pPrint')){$('printArea').innerHTML=`<style>@page{size:${paper()}mm auto;margin:0}</style>`+prepReceipt();window.print()}});
 $('stockList').addEventListener('click',async e=>{
  const b=e.target.closest('.seg3 button');if(!b)return;const id=b.closest('.srow').dataset.id,v=b.dataset.v;
  const val=v==='today'?{until:dk(new Date())}:v==='off'?{until:null}:null;
