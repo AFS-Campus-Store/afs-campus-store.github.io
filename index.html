@@ -69,6 +69,17 @@ h4{font-size:15px;margin:22px 0 4px}
 .order .when{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px}
 .order .when span{color:var(--muted);font-weight:500;white-space:nowrap}
 .order ul{margin:8px 0;padding-left:18px;font-size:14px;color:var(--muted)}
+.hsum{display:block;position:relative;width:100%;border:0;background:transparent;padding:0 30px 0 0;text-align:left;color:inherit;cursor:pointer}
+.hsum .chev{position:absolute;right:0;top:50%;transform:translateY(-50%);margin:0}
+.order.open .hsum .chev{transform:translateY(-50%) rotate(180deg)}
+.hline .st{line-height:1.35;padding:3px 10px}
+.hsum .when{display:block;font-weight:600;font-size:14px}
+.hline{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:6px}
+.hline .st{white-space:nowrap}
+.hn{color:var(--muted);font-size:14px;white-space:nowrap}
+.order .chev{margin-left:auto;font-size:18px;transition:transform .15s}
+.order.open .chev{transform:rotate(180deg)}
+.hpick{margin:8px 0 0;font-size:14px;color:var(--muted)}
 .order .again{border:0;background:var(--green);color:#fff;border-radius:12px;font-weight:600;min-height:44px;padding:0 16px}
 .empty{color:var(--muted);font-size:14px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:16px;text-align:center;margin-top:10px}
 .danger{border:0;background:none;color:var(--red);font-weight:600;min-height:44px;padding:0;margin-top:6px}
@@ -531,13 +542,18 @@ function stBadge(o){const st=STATUS[o.status]||STATUS.new;
  return `<span class="st ${st.c}">${st.t}${esc(when)}</span>`}
 function itemsList(o){return ORDER.filter(id=>o.items&&o.items[id]).map(id=>`<li>${esc(VAR[id].n)} × ${o.items[id]}</li>`).join('')}
 function pickupTxt(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'}):''}
+const histOpen=new Set(); // which past orders are expanded
 function paintHistory(){
  if($('account').hidden)return;
- $('history').innerHTML=myOrders.length?myOrders.map((o,i)=>`<div class="order"><div class="when">${esc(fmtDate(o.at))}${o.code?` · #${esc(o.code)}`:''}<span>${esc(pickupTxt(o))}</span></div>
-  <div style="margin-top:6px">${stBadge(o)}</div>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+ $('history').innerHTML=myOrders.length?myOrders.map((o,i)=>{const n=Object.values(o.items||{}).reduce((a,b)=>a+b,0),op=histOpen.has(o.id);
+  return `<div class="order${op?' open':''}"><button class="hsum" type="button" data-id="${esc(o.id)}" aria-expanded="${op}">
+   <span class="when">${esc(fmtDate(o.at))}${o.code?` · #${esc(o.code)}`:''}</span>
+   <span class="hline">${stBadge(o)}<span class="hn">${n} ${n===1?'τεμάχιο':'τεμάχια'}</span><span class="chev" aria-hidden="true">▾</span></span></button>
+  <div class="hbody"${op?'':' hidden'}>${pickupTxt(o)?`<p class="hpick">${esc(pickupTxt(o))}</p>`:''}${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
   <ul>${itemsList(o)}</ul>
-  <button class="again" data-i="${i}">Παραγγείλτε ξανά</button></div>`).join(''):'<div class="empty">Δεν έχετε κάνει ακόμα παραγγελία με τον λογαριασμό σας.</div>';
+  <button class="again" data-i="${i}">Παραγγείλτε ξανά</button></div></div>`}).join(''):'<div class="empty">Δεν έχετε κάνει ακόμα παραγγελία με τον λογαριασμό σας.</div>';
 }
+$('history').addEventListener('click',e=>{const h=e.target.closest('.hsum');if(!h)return;const id=h.dataset.id;histOpen.has(id)?histOpen.delete(id):histOpen.add(id);paintHistory()});
 function openAccount(){
  if(!real())return openLogin(false);
  $('hello').textContent=`Γεια σας${profile.name||user.name?', '+(profile.name||user.name).split(' ')[0]:''}!`;

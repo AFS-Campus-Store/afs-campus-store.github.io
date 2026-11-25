@@ -116,6 +116,14 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
  .rc .foot{margin-top:4mm;font-size:10pt}
  .rc .cut{height:12mm}
 }
+.tsum{display:block;width:100%;text-align:left;border:0;background:transparent;padding:0;margin-top:4px;color:inherit;cursor:pointer}
+.tsum .who{display:block}
+.sline{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:14px}
+.chev{margin-left:auto;font-size:18px;color:var(--ink);transition:transform .15s}
+.t.open .chev{transform:rotate(180deg)}
+.tb{margin-top:6px}
+.exp{border:1.5px solid var(--line);background:var(--card);border-radius:10px;min-height:44px;padding:0 14px;font-weight:600;color:var(--ink)}
+[hidden]{display:none!important}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 @media (prefers-reduced-motion:no-preference){.t.fresh{animation:pulse 1.6s ease-in-out 3}@keyframes pulse{50%{box-shadow:0 0 0 6px light-dark(#dcefe0,#1f3a27)}}}
 </style>
@@ -152,6 +160,7 @@ textarea{width:100%;font-size:15px;border:1.5px solid var(--line);background:var
   <div class="tools">
    <input type="search" id="q" placeholder="Αναζήτηση: κωδικός, όνομα ή τηλέφωνο" autocomplete="off">
    <label class="chk" id="dayBox" hidden>Ημέρα <select id="day"></select></label>
+   <button class="exp" id="expAll" type="button">Άνοιγμα όλων</button>
    <label class="chk"><input type="checkbox" id="sound"> Ήχος σε νέα παραγγελία</label>
    <label class="chk">Χαρτί <select id="paper"><option value="80">80 mm</option><option value="58">58 mm</option></select></label>
    <label class="chk" title="Τυπώνει μόνη της κάθε νέα παραγγελία, όσο η σελίδα είναι ανοιχτή"><input type="checkbox" id="autoprint"> Αυτόματη εκτύπωση νέων</label>
@@ -188,16 +197,20 @@ function fmtTime(d){const t=d.toLocaleTimeString('el-GR',{hour:'2-digit',minute:
 function pick(o){return o.pickup&&o.pickup!=='today'?'Παραλαβή '+new Date(o.pickup+'T12:00').toLocaleDateString('el-GR',{weekday:'long',day:'numeric',month:'long'}):''}
 function lines(o){if(o.lines&&o.lines.length)return o.lines;return Object.entries(o.items||{}).map(([id,q])=>({n:'Προϊόν '+id,q}))}
 
+const openIds=new Set();let allOpen=false; // which orders are expanded
 function ticket(o){
  const st=STATUS[o.status]||STATUS.new,fresh=o.status==='new'&&Date.now()-o.at<10*60e3;
+ const open=allOpen||openIds.has(o.id),n=lines(o).reduce((a,l)=>a+(+l.q||0),0);
  const note=drafts[o.id]!==undefined?drafts[o.id]:(o.staffNote||'');
  const tel=String(o.phone||'').replace(/[^\d+]/g,'');
- return `<article class="t ${st.c}${fresh?' fresh':''}" data-id="${esc(o.id)}">
+ return `<article class="t ${st.c}${fresh?' fresh':''}${open?' open':''}" data-id="${esc(o.id)}">
   <div class="th"><span class="code">#${esc(o.code||'----')}</span><span class="thr"><button class="b-print" type="button" title="Εκτύπωση παραγγελίας" aria-label="Εκτύπωση παραγγελίας #${esc(o.code||'')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/><path d="M17 12h.01"/></svg></button><span class="st ${st.c}">${st.t}${(o.status==='done'||o.status==='cancelled')&&o.upd?' '+esc(o.upd.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'})):''}</span></span></div>
   ${o.status==='cancelled'?`<p class="cby">${o.cancelledBy==='customer'?'Ακυρώθηκε από τον πελάτη':'Ακυρώθηκε από το κατάστημα'}</p>`:''}
-  <div class="who">${esc(o.name)}</div>
-  <div class="meta"><span>${o.status==='done'||o.status==='cancelled'?'Παραγγελία ':''}${esc(fmtTime(o.at))}</span>${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
-  ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}
+  <button class="tsum" type="button" aria-expanded="${open}"><span class="who">${esc(o.name)}</span>
+   <span class="sline">${esc(fmtTime(o.at))} · ${n} ${n===1?'τεμάχιο':'τεμάχια'}${o.notes?' · 💬':''}<span class="chev" aria-hidden="true">▾</span></span>
+   ${pick(o)?`<span class="pick">${esc(pick(o))}</span>`:''}</button>
+  <div class="tb"${open?'':' hidden'}>
+  <div class="meta">${o.status==='done'||o.status==='cancelled'?`<span>Παραγγελία ${esc(fmtTime(o.at))}</span>`:''}${tel?`<a href="tel:${esc(tel)}">${esc(o.phone)}</a>`:''}</div>
   <ul class="items">${lines(o).map(l=>`<li><span>${esc(l.n)}</span><b>× ${esc(l.q)}</b></li>`).join('')}</ul>
   ${o.notes?`<p class="cnote"><b>Σχόλιο πελάτη:</b> ${esc(o.notes)}</p>`:''}
   ${o.status==='done'||o.status==='cancelled'?(o.staffNote?`<p class="cnote"><b>Σημείωμα:</b> ${esc(o.staffNote)}</p>`:''):`<textarea class="note" placeholder="Σημείωμα για τον πελάτη (π.χ. τι λείπει)">${esc(note)}</textarea>`}
@@ -205,7 +218,7 @@ function ticket(o){
    ?`<button class="b-back" data-s="ready">Επαναφορά στις έτοιμες</button>`
    :o.status==='cancelled'?`<button class="b-back" data-s="new">Επαναφορά (ενεργή ξανά)</button>`
    :`<button class="b-ready" data-s="ready"${o.status==='ready'?' disabled':''}>✓ Έτοιμη</button><button class="b-issue" data-s="issue">⚠ Λείπει κάτι</button><button class="b-done" data-s="done">Παραλήφθηκε</button><button class="b-cancel" data-s="cancelled">Ακύρωση παραγγελίας</button>`}</div>
-  <div class="err"></div></article>`;
+  <div class="err"></div></div></article>`;
 }
 
 const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -257,6 +270,7 @@ function onList(list){
 $('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=b.dataset.t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));paint()});
 $('q').addEventListener('input',paint);
 $('day').addEventListener('change',paint);
+$('expAll').addEventListener('click',()=>{allOpen=!allOpen;if(!allOpen)openIds.clear();$('expAll').textContent=allOpen?'Κλείσιμο όλων':'Άνοιγμα όλων';paint()});
 $('grid').addEventListener('input',e=>{if(e.target.classList.contains('note'))drafts[e.target.closest('.t').dataset.id]=e.target.value});
 /* thermal receipt printing (80 mm or 58 mm roll) */
 const paper=()=>$('paper').value;
@@ -286,6 +300,9 @@ function printOrders(list){
  $('printArea').innerHTML=`<style>@page{size:${paper()}mm auto;margin:0}</style>`+list.map(receipt).join('');
  window.print();
 }
+$('grid').addEventListener('click',e=>{const s=e.target.closest('.tsum');if(!s)return;const id=s.closest('.t').dataset.id;
+ if(allOpen){allOpen=false;orders.forEach(o=>openIds.add(o.id))}
+ openIds.has(id)?openIds.delete(id):openIds.add(id);paint();$('expAll').textContent='Άνοιγμα όλων'});
 $('grid').addEventListener('click',e=>{const b=e.target.closest('.b-print');if(!b)return;const o=orders.find(x=>x.id===b.closest('.t').dataset.id);if(o)printOrders([o])});
 $('grid').addEventListener('click',async e=>{
  const b=e.target.closest('.acts button');if(!b)return;
