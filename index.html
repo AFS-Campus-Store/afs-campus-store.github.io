@@ -154,6 +154,12 @@ h4{font-size:15px;margin:22px 0 4px}
 .toast .undo{margin-left:12px;border:0;background:var(--yolk);color:var(--yolk-ink);font-weight:800;border-radius:10px;padding:8px 14px;min-height:40px}
 .toast{display:flex;align-items:center;justify-content:space-between;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:40;width:min(92vw,460px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 .announce{margin:18px 0 0;padding:12px 16px;border-radius:14px;background:var(--yolk);color:var(--yolk-ink);font-weight:700;white-space:pre-line}
+.edit{margin-top:8px;margin-right:12px;border:1.5px solid var(--green2);background:transparent;color:var(--green2);font-weight:700;border-radius:10px;padding:6px 14px;min-height:40px}
+.edtag{display:inline-block;margin-top:8px;font-size:13px;color:var(--muted)}
+.editbar{position:sticky;top:62px;z-index:4;margin:14px 0 0;padding:12px 14px;border-radius:14px;background:var(--green);color:#fff;font-weight:600;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 6px 18px rgba(0,0,0,.15)}
+.editbar span{flex:1 1 220px}
+.editbar button{border:1.5px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:10px;min-height:40px;padding:0 12px;font-weight:700}
+[hidden]{display:none!important}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -282,6 +288,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 <nav class="chips" aria-label="Κατηγορίες"><div class="wrap" id="chips"></div></nav>
 
 <main class="wrap">
+ <div class="editbar" id="editBar" hidden><span id="editTxt"></span><button type="button" id="editCancel">Ακύρωση αλλαγής</button></div>
  <div class="announce" id="announce" hidden></div>
  <div id="live"></div>
  <p class="notice" id="notice">Οι παραγγελίες είναι για παραλαβή αυθημερόν. Για άλλη ημέρα, επιλέξτε την στην ολοκλήρωση της παραγγελίας. Έως 10 τεμάχια ανά προϊόν.</p>
@@ -354,7 +361,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
   </div>
   <div id="done" class="done" hidden>
    <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="#2f6b40"/><circle cx="60" cy="60" r="44" fill="#1d4a2c"/><path d="M38 61l15 15 30-32" fill="none" stroke="#f3b52f" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-   <h2>Η παραγγελία στάλθηκε!</h2>
+   <h2 id="doneTitle">Η παραγγελία στάλθηκε!</h2>
    <p class="dcode" id="doneCode" hidden></p>
    <p id="doneTxt">Θα σας περιμένει στο Campus Store.</p>
    <div class="sum" id="doneSum" style="text-align:start"></div>
@@ -460,7 +467,7 @@ function render(){
   if(tag){if(out)tag.textContent=stock[id].until?'Εξαντλήθηκε σήμερα':'Μη διαθέσιμο';else tag.remove()}});
  document.querySelectorAll('#list .card').forEach(c=>{const it=ITEMS[+c.dataset.item];c.classList.toggle('allout',!!it&&it.v.every(v=>isOut(v[0])))});
  const n=count();$('cartCount').textContent=n;$('cartBtn').disabled=!n;
- $('cartTxt').textContent=n?'Ολοκλήρωση παραγγελίας':'Προσθέστε προϊόντα';
+ $('cartTxt').textContent=editing?'Αποθήκευση αλλαγών':n?'Ολοκλήρωση παραγγελίας':'Προσθέστε προϊόντα';
  ls.set('cs_cart',cart);
  $('repeatBtn').classList.toggle('show',!n&&!!ls.get('cs_last'));
 }
@@ -607,9 +614,30 @@ function paintLive(){
  const act=myOrders.filter(o=>o.at.getTime()>week&&o.status!=='done'&&(o.status!=='cancelled'||(o.cancelledBy==='store'&&!seen.includes(o.id))));
  $('live').innerHTML=act.length?`<h2>Οι παραγγελίες σας</h2>`+act.map(o=>{const st=STATUS[o.status]||STATUS.new;return `<div class="live ${st.c}"><div class="lhead"><b>#${esc(o.code||'')}</b>${stBadge(o)}</div>
   <p class="ldesc">${o.status==='cancelled'?'Η παραγγελία ακυρώθηκε από το κατάστημα.':esc(st.d)+(pickupTxt(o)?' · '+esc(pickupTxt(o)):'')}</p>${o.staffNote?`<p class="snote">${esc(o.staffNote)}</p>`:''}
+  ${o.status==='new'?`<button class="edit" type="button" data-id="${esc(o.id)}">✏️ Αλλαγή παραγγελίας</button>`:''}${o.edAt&&o.status!=='cancelled'?`<span class="edtag">Αλλάχτηκε ${esc(o.edAt.toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}))}</span>`:''}
   ${o.status!=='cancelled'?`<button class="cxl" type="button" data-id="${esc(o.id)}">Ακύρωση παραγγελίας</button><span class="cerr"></span>`:`<button class="seen" type="button" data-id="${esc(o.id)}">Παράλειψη</button>`}
   <details><summary>${(n=>n===1?'1 τεμάχιο':n+' τεμάχια')(Object.values(o.items||{}).reduce((a,b)=>a+b,0))}</summary><ul>${itemsList(o)}</ul></details></div>`}).join(''):'';
 }
+/* ---------- change an order that has not been prepared yet ---------- */
+let editing=null,stash=null;
+function paintEdit(){
+ $('editBar').hidden=!editing;
+ if(editing)$('editTxt').textContent=`Αλλάζετε την παραγγελία #${editing.code}. Προσθέστε ή αφαιρέστε προϊόντα και πατήστε «Αποθήκευση αλλαγών».`;
+ $('sheetTitle').textContent=editing?`Αλλαγή παραγγελίας #${editing.code}`:'Η παραγγελία σας';
+ $('sendBtn').textContent=editing?'Αποθήκευση αλλαγών':'Αποστολή παραγγελίας';
+ render();
+}
+function startEdit(o){
+ if(!editing)stash={...cart};
+ editing={id:o.id,code:o.code,lines:o.lines||[]};
+ cart=clean(o.items);
+ if(o.pickup&&o.pickup!=='today'){pickup='other';$('date').value=o.pickup}else pickup='today';
+ $('notes').value=o.notes||'';
+ paintEdit();scrollTo({top:$('list').offsetTop-70,behavior:'smooth'});
+}
+function endEdit(restore){editing=null;if(restore){cart=stash||{};}stash=null;$('notes').value='';paintEdit()}
+$('editCancel').addEventListener('click',()=>endEdit(true));
+$('live').addEventListener('click',e=>{const b=e.target.closest('.edit');if(!b)return;const o=myOrders.find(x=>x.id===b.dataset.id);if(o&&o.status==='new')startEdit(o)});
 $('live').addEventListener('click',async e=>{
  const ok=e.target.closest('.seen');
  if(ok){const l=(ls.get('cs_dismissed')||[]).filter(x=>x!==ok.dataset.id);l.push(ok.dataset.id);ls.set('cs_dismissed',l.slice(-50));paintLive();return}
@@ -624,6 +652,7 @@ function onOrders(list){
  // gentle buzz when an order becomes ready while the app is open
  list.forEach(o=>{if(lastSt[o.id]&&lastSt[o.id]!==o.status&&(o.status==='ready'||o.status==='issue'||(o.status==='cancelled'&&o.cancelledBy==='store'))&&navigator.vibrate)navigator.vibrate([120,60,120]);lastSt[o.id]=o.status});
  myOrders=list;paintLive();paintHistory();
+ if(editing){const o=list.find(x=>x.id===editing.id);if(!o||o.status!=='new'){endEdit(true);notice('Η παραγγελία άρχισε να ετοιμάζεται και δεν μπορεί πλέον να αλλάξει.')}}
 }
 $('saveBtn').addEventListener('click',async()=>{const p={name:$('pName').value.trim(),phone:$('pPhone').value.trim()};
  try{await API.saveProfile(p);profile={...profile,...p};$('pOk').textContent='Τα στοιχεία αποθηκεύτηκαν.';paintAcct()}catch(e){$('pOk').textContent=msg(e)}});
@@ -655,35 +684,43 @@ $('form').addEventListener('submit',async e=>{
  const pickDate=pickup==='other'?$('date').value:pickup==='next'?H.nextOpen():'';
  if(!navigator.onLine)return $('err').textContent='Δεν υπάρχει σύνδεση στο ίντερνετ. Δοκιμάστε ξανά σε λίγο.';
  if(Object.keys(cart).some(isOut)){Object.keys(cart).filter(isOut).forEach(id=>delete cart[id]);render();$('sum').innerHTML=summary(cart);return $('err').textContent='Κάποια προϊόντα μόλις εξαντλήθηκαν και αφαιρέθηκαν. Ελέγξτε την παραγγελία και πατήστε ξανά Αποστολή.'}
- if(!count())return $('err').textContent='Το καλάθι σας είναι άδειο.';
+ if(!count())return $('err').textContent=editing?'Η παραγγελία δεν μπορεί να μείνει άδεια. Αν δεν τη θέλετε, ακυρώστε την από την αρχική σελίδα.':'Το καλάθι σας είναι άδειο.';
  const userNotes=$('notes').value.trim();let notes=userNotes;
- const code=API&&user?API.newCode():'';
+ const ed=editing,code=ed?ed.code:API&&user?API.newCode():'';
  if(pickDate){notes=`ΠΑΡΑΛΑΒΗ: ${longDay(pickDate)}`+(notes?` — ${notes}`:'')}
  const extra=ORDER.filter(id=>cart[id]&&id.startsWith('x-')).map(id=>`${VAR[id].n.replace(/\u00a0/g,' ')} × ${cart[id]}`); // products without a form question
  if(extra.length)notes=`ΕΠΙΠΛΕΟΝ: ${extra.join(' · ')}`+(notes?` — ${notes}`:'');
+ if(ed)notes='ΑΛΛΑΓΗ (αντικαθιστά την προηγούμενη)'+(notes?` · ${notes}`:'');
  if(code)notes=`#${code}`+(notes?` · ${notes}`:'');
  const p=new URLSearchParams();p.append(F.name,name);p.append(F.phone,phone);if(notes)p.append(F.notes,notes);
  ORDER.filter(id=>cart[id]&&!id.startsWith('x-')).forEach(id=>p.append('entry.'+id,String(cart[id])));
  p.append('fvv','1');p.append('pageHistory','0');
- const btn=$('sendBtn');btn.disabled=true;btn.textContent='Αποστολή…';$('err').textContent='';
+ const btn=$('sendBtn'),btnTxt=ed?'Αποθήκευση αλλαγών':'Αποστολή παραγγελίας';btn.disabled=true;btn.textContent='Αποστολή…';$('err').textContent='';
+ const newLines=ORDER.filter(id=>cart[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:cart[id]}));
+ if(ed){ // save the change first: it is refused if the store has already started on the order
+  try{await API.editOrder(ed.id,{items:{...cart},lines:newLines,pickup:pickDate||'today',notes:userNotes,name,phone,prevLines:ed.lines})}
+  catch(er){btn.disabled=false;btn.textContent=btnTxt;return $('err').textContent=er&&er.code==='permission-denied'?'Η παραγγελία άρχισε ήδη να ετοιμάζεται και δεν μπορεί να αλλάξει. Επικοινωνήστε με το κατάστημα.':msg(er)}
+ }
  try{
   await fetch(FORM,{method:'POST',mode:'no-cors',body:p});
- }catch(err){$('err').textContent='Η παραγγελία δεν στάλθηκε. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.';btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';return}
+ }catch(err){if(!ed){$('err').textContent='Η παραγγελία δεν στάλθηκε. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.';btn.disabled=false;btn.textContent=btnTxt;return}}
  const sent={...cart};
  ls.set('cs_me',{name,phone});ls.set('cs_last',sent);
  let tracked=false;
- if(user){ // status tracking + history; the order itself is already in the form
-  try{await API.addOrder({code,items:sent,lines:ORDER.filter(id=>sent[id]).map(id=>({id,n:VAR[id].n.replace(/\u00a0/g,' '),q:sent[id]})),pickup:pickDate||'today',notes:userNotes,name,phone});tracked=true}catch(e){}
+ if(user&&!ed){ // status tracking + history; the order itself is already in the form
+  try{await API.addOrder({code,items:sent,lines:newLines,pickup:pickDate||'today',notes:userNotes,name,phone});tracked=true}catch(e){}
   if(real()&&(name!==profile.name||phone!==profile.phone)){profile={...profile,name,phone};API.saveProfile({name,phone}).catch(()=>{});paintAcct()}
  }
- $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`Κωδικός παραγγελίας<b>#${esc(code)}</b>${tracked?'<small>Θα δείτε εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
+ if(ed)tracked=true;
+ $('doneCode').hidden=!code;$('doneCode').innerHTML=code?`${ed?'Η αλλαγή αποθηκεύτηκε':'Κωδικός παραγγελίας'}<b>#${esc(code)}</b>${tracked?'<small>Θα δείτε εδώ, στην αρχική σελίδα, πότε είναι έτοιμη.</small>':''}`:'';
+ $('doneTitle').textContent=ed?'Η παραγγελία άλλαξε!':'Η παραγγελία στάλθηκε!';
  $('doneSum').innerHTML=summary(sent);
  $('doneTxt').textContent=pickDate?`Θα σας περιμένει στο Campus Store ${longDay(pickDate)}.`:'Θα σας περιμένει σήμερα στο Campus Store.';
- cart={};render();$('notes').value='';
+ cart={};if(ed){editing=null;cart=stash||{};stash=null;paintEdit()}render();$('notes').value='';
  $('suggestBtn').hidden=real()||!API;
  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone;
  $('iosTip').classList.toggle('show',ios);
- show('done');btn.disabled=false;btn.textContent='Αποστολή παραγγελίας';
+ show('done');btn.disabled=false;btn.textContent=editing?'Αποθήκευση αλλαγών':'Αποστολή παραγγελίας';
 });
 $('newBtn').addEventListener('click',()=>{closeSheet();scrollTo({top:0,behavior:'smooth'})});
 

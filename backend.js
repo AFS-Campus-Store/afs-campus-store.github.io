@@ -12,7 +12,7 @@
     A.getRedirectResult(auth).catch(() => {});
     const me = () => auth.currentUser;
     const uref = () => S.doc(db, 'users', me().uid);
-    const mapOrder = d => { const x = d.data(); return { ...x, id: d.id, at: x.createdAt ? x.createdAt.toDate() : new Date(), upd: x.updatedAt ? x.updatedAt.toDate() : null }; };
+    const mapOrder = d => { const x = d.data(); return { ...x, id: d.id, at: x.createdAt ? x.createdAt.toDate() : new Date(), upd: x.updatedAt ? x.updatedAt.toDate() : null, edAt: x.editedAt ? x.editedAt.toDate() : null }; };
     return {
       kind: 'firebase',
       onChange: cb => A.onAuthStateChanged(auth, u => cb(toUser(u))),
@@ -64,6 +64,7 @@
       setStock: (id, val) => val
         ? S.setDoc(S.doc(db, 'settings', 'stock'), { soldOut: { [id]: val }, updatedAt: S.serverTimestamp() }, { merge: true })
         : S.setDoc(S.doc(db, 'settings', 'stock'), { soldOut: { [id]: S.deleteField() }, updatedAt: S.serverTimestamp() }, { merge: true }),
+      editOrder: (id, d) => S.updateDoc(S.doc(db, 'orders', id), { ...d, editedAt: S.serverTimestamp(), updatedAt: S.serverTimestamp() }),
       cancel: id => S.updateDoc(S.doc(db, 'orders', id), { status: 'cancelled', cancelledBy: 'customer', updatedAt: S.serverTimestamp() }),
       del: async () => {
         const mine = await S.getDocs(S.query(S.collection(db, 'orders'), S.where('uid', '==', me().uid)));
@@ -87,7 +88,7 @@
     let authCb = () => {}; const watchers = new Set();
     const cur = () => db.cur && db.users[db.cur];
     const emitAuth = () => { const u = cur(); authCb(u ? { uid: db.cur, email: u.email || '', name: u.name || '', anon: !!u.anon, verified: true } : null); };
-    const mapO = o => ({ ...o, at: new Date(o.at), upd: o.upd ? new Date(o.upd) : null });
+    const mapO = o => ({ ...o, at: new Date(o.at), upd: o.upd ? new Date(o.upd) : null, edAt: o.edAt ? new Date(o.edAt) : null });
     function fire() { watchers.forEach(w => w()); }
     addEventListener('storage', e => { if (e.key === KEY) { const n = load(); if (n) { db.users = n.users; db.orders = n.orders; db.stock = n.stock; db.store = n.store; } fire(); } });
     const watch = f => { watchers.add(f); setTimeout(f, 0); return () => watchers.delete(f); };
@@ -120,6 +121,7 @@
       setStore: async val => { db.store = val; save(); },
       watchStock: cb => watch(() => cb(db.stock || {})),
       setStock: async (id, val) => { db.stock = db.stock || {}; if (val) db.stock[id] = val; else delete db.stock[id]; save(); },
+      editOrder: async (id, d) => { const o = db.orders.find(x => x.id === id && x.uid === db.cur); if (!o || o.status !== 'new') throw err('permission-denied'); Object.assign(o, d); o.edAt = o.upd = new Date().toISOString(); save(); },
       cancel: async id => { const o = db.orders.find(x => x.id === id && x.uid === db.cur); if (o && !['done', 'cancelled'].includes(o.status)) { o.status = 'cancelled'; o.cancelledBy = 'customer'; o.upd = new Date().toISOString(); save(); } },
       del: async () => { db.orders = db.orders.filter(o => o.uid !== db.cur); delete db.users[db.cur]; db.cur = null; save(); emitAuth(); }
     };
