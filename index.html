@@ -160,6 +160,12 @@ h4{font-size:15px;margin:22px 0 4px}
 .editbar span{flex:1 1 220px}
 .editbar button{border:1.5px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:10px;min-height:40px;padding:0 12px;font-weight:700}
 [hidden]{display:none!important}
+.nutr tr.nh td{font-size:12px;color:var(--muted);font-weight:600;white-space:normal;text-align:right}
+.nutr.two{table-layout:fixed;font-size:14px}
+.nutr.two td{padding:8px 8px;white-space:normal!important;overflow-wrap:anywhere}
+.nutr.two td:first-child{width:40%}
+.nutr.two td:not(:first-child){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.nutr.two tr.sub td:first-child{padding-left:18px}
 .demo{background:var(--yolk);color:var(--yolk-ink);font-size:13px;text-align:center;padding:6px 12px;font-weight:600}
 
 /* chips */
@@ -375,6 +381,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0 10px}
 <script src="firebase-config.js"></script>
 <script src="backend.js"></script>
 <script src="catalog.js"></script>
+<script src="info.js"></script>
 <script>
 {
 /* eye button on password fields: tap to show / hide what was typed */
@@ -429,7 +436,7 @@ const ITEMS=[];CATS.forEach(c=>c.items.forEach(it=>{it.cat=c.name;ITEMS.push(it)
    gala:{desc:'Φρέσκο παστεριωμένο γάλα από το αγρόκτημα της Σχολής.', per:'ανά 100 ml',
          nutr:[['Ενέργεια','272 kJ / 65 kcal'],['Λιπαρά','3,8 g'],['-κορεσμένα','2,4 g'],...],
          facts:[['Συστατικά','...'],['Διατήρηση','...']]} */
-const INFO={};
+const INFO=window.CS_INFO||{}; // product details live in info.js
 let stock={}; // sold-out options, set by the staff page
 const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const isOut=id=>{const v=stock[id];return !!v&&(!v.until||v.until>=todayKey())};
@@ -503,7 +510,7 @@ function renderInfo(inf){
  if(!inf){$('pdInfo').innerHTML='';return}
  let h='';
  if(inf.desc)h+=`<p class="pd-desc">${esc(inf.desc)}</p>`;
- if(inf.nutr&&inf.nutr.length)h+=`<h4>Διατροφική αξία${inf.per?' '+esc(inf.per):''}</h4><table class="nutr">${inf.nutr.map(([k,v])=>`<tr${/^[-–]/.test(k)?' class="sub"':''}><td>${esc(k.replace(/^[-–]\s*/,''))}</td><td>${esc(v)}</td></tr>`).join('')}</table>`;
+ if(inf.nutr&&inf.nutr.length){const two=!!inf.per2;h+=`<h4>Διατροφική αξία</h4><table class="nutr${two?' two':''}">${two||inf.per?`<tr class="nh"><td></td><td>${esc(inf.per||'')}</td>${two?`<td>${esc(inf.per2)}</td>`:''}</tr>`:''}${inf.nutr.map(([k,v,v2])=>`<tr${/^[-–]/.test(k)?' class="sub"':''}><td>${esc(k.replace(/^[-–]\s*/,''))}</td><td>${esc(v)}</td>${two?`<td>${esc(v2||'')}</td>`:''}</tr>`).join('')}</table>`}
  if(inf.facts&&inf.facts.length)h+=`<h4>Πληροφορίες</h4><ul class="facts">${inf.facts.map(([k,v])=>`<li><b>${esc(k)}</b>${esc(v)}</li>`).join('')}</ul>`;
  $('pdInfo').innerHTML=h;
 }
