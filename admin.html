@@ -295,7 +295,7 @@ const outState=id=>{const v=stock[id];if(!v)return '';if(!v.until)return 'off';r
 const optName=(it,l)=>['Ποσότητα','Τεμάχια','Τεμάχιο','Φιάλες'].includes(l)||!it.t?(it.t||l):it.t+' — '+l;
 function paintStock(){
  $('stockList').innerHTML=`<p class="shelp">Ό,τι σημειώσετε εδώ φαίνεται αμέσως στην εφαρμογή ως μη διαθέσιμο και δεν μπαίνει στο καλάθι. Το «Εξαντλήθηκε σήμερα» γίνεται ξανά διαθέσιμο μόνο του την επόμενη μέρα.</p>`+
- window.CS_CATALOG.map(c=>`<h2 class="day">${esc(c.name)}</h2>`+c.items.map(it=>it.v.map(([id,l,ph])=>{const st=outState(id),p=ph||it.p;
+ window.CS_CATALOG.map(c=>`<h2 class="day">${esc(c.name)}</h2>`+c.items.map((it,k)=>(it.sub&&it.sub!==(c.items[k-1]||{}).sub?`<h3 style="font-size:15px;margin:14px 0 6px;color:#2f6b40">${esc(it.sub)}</h3>`:'')+it.v.map(([id,l,ph])=>{const st=outState(id),p=ph||it.p;
   return `<div class="srow${st?' is-out':''}" data-id="${esc(id)}"><span class="sth">${p?`<img src="${esc(p)}.jpg" alt="" loading="lazy" onerror="this.remove()">`:''}</span>
    <span class="sname">${esc(optName(it,l).replace(/\u00a0/g,' '))}</span>
    <span class="seg3"><button type="button" data-v=""${!st?' class="on"':''}>Διαθέσιμο</button><button type="button" data-v="today"${st==='today'?' class="on"':''}>Εξαντλήθηκε σήμερα</button><button type="button" data-v="off"${st==='off'?' class="on"':''}>Μέχρι νεωτέρας</button></span></div>`}).join('')).join('')).join('');
