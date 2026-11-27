@@ -450,9 +450,10 @@ const isOut=id=>{const v=stock[id];return !!v&&(!v.until||v.until>=todayKey())};
 const clean=c=>{const o={};for(const k in c||{})if(VAR[k]&&!isOut(k))o[k]=Math.min(c[k],MAX);return o};cart=clean(cart);
 const $=id=>document.getElementById(id);
 
+const picHTML=it=>`<div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div>`;
 $('chips').innerHTML=CATS.map((c,i)=>`<button class="chip${i?'':' on'}" data-c="${c.id}">${c.name}</button>`).join('');
 $('list').innerHTML=CATS.map(c=>`<section id="c-${c.id}"><h2>${c.name}</h2>${c.items.map((it,k)=>`${it.sub&&it.sub!==(c.items[k-1]||{}).sub?`<h3 class="subh">${it.sub}</h3>`:''}
- <div class="card${solo(it)?' solo':''}${!it.t&&!it.s&&!it.p?' nohead':''}" data-item="${ITEMS.indexOf(it)}"><div class="head${solo(it)?' row':''}"${solo(it)?` data-id="${it.v[0][0]}"`:''}><div class="pic"><svg viewBox="0 0 52 52" aria-hidden="true">${ART[it.a]}</svg>${it.p?`<img src="${it.p}.jpg" alt="" loading="lazy" onload="this.closest('.card').classList.add('photo')" onerror="this.remove()">`:''}</div><div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div>${solo(it)?stepHTML(it.t):''}</div>
+ <div class="card${solo(it)?' solo':''}${!it.t&&!it.s&&!it.p?' nohead':''}" data-item="${ITEMS.indexOf(it)}"><div class="head${solo(it)?' row':''}"${solo(it)?` data-id="${it.v[0][0]}"`:''}>${solo(it)?picHTML(it):''}<div>${it.t?`<h3>${it.t}</h3>`:''}${it.s?`<small>${it.s}</small>`:''}<button class="link more" type="button" style="padding:0;min-height:0;text-decoration:none">Πληροφορίες ›</button></div>${solo(it)?stepHTML(it.t):''}</div>
  ${solo(it)?'':it.v.map(([id,l,ph])=>rowHTML(id,l,ph,it)).join('')}
  </div>`).join('')}</section>`).join('');
 
