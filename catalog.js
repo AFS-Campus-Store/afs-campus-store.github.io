@@ -25,8 +25,8 @@ window.CS_CATALOG=[
  {p:'krasi-roze',t:'Ροζέ κρασί',s:'φιάλη 750 ml',a:'wineR',v:[['x-roze','Φιάλες']]}]},
 // sub = subheading inside the category (shown when it changes)
 {id:'alumni',name:'Προϊόντα αποφοίτων',items:[
- {sub:'Πίτες της Μαριάννας',p:'pites-marianna',t:'Χειροποίητες πίτες',s:'1 kg',a:'pie',v:[['x-pita-tyro','Τυρόπιτα'],['x-pita-spanakotyro','Σπανακοτυρόπιτα'],['x-pita-spanako','Σπανακόπιτα νηστίσιμη'],['x-pita-prasotyro','Πρασοτυρόπιτα'],['x-pita-kasero','Κασερόπιτα'],['x-pita-kimas','Κιμαδόπιτα'],['x-pita-kolokytho-alm','Κολοκυθόπιτα αλμυρή'],['x-pita-kolokytho','Κολοκυθόπιτα'],['x-pita-kremo','Κρεμόπιτα · 1,2 kg']]},
- {sub:'Πίτες της Μαριάννας',p:'ntolmadakia',t:'Ντολμαδάκια',a:'leaf',v:[['x-ntolmades-200','200 g'],['x-ntolmades-500','500 g']]},
+ {sub:'Πίτες της Μαριάννας',p:'pites-marianna',t:'Χειροποίητες πίτες',s:'1 kg',a:'pie',v:[['x-pita-tyro','Τυρόπιτα','pita-tyro'],['x-pita-spanakotyro','Σπανακοτυρόπιτα','pita-spanakotyro'],['x-pita-spanako','Σπανακόπιτα νηστίσιμη','pita-spanako'],['x-pita-prasotyro','Πρασοτυρόπιτα','pita-prasotyro'],['x-pita-kasero','Κασερόπιτα','pita-kasero'],['x-pita-kimas','Κιμαδόπιτα','pita-kimas'],['x-pita-kolokytho-alm','Κολοκυθόπιτα αλμυρή','pita-kolokytho-alm'],['x-pita-kolokytho','Κολοκυθόπιτα γλυκιά','pita-kolokytho'],['x-pita-kremo','Κρεμόπιτα · 1,2 kg']]},
+ {sub:'Πίτες της Μαριάννας',p:'ntolmadakia',t:'Ντολμαδάκια',a:'leaf',v:[['x-ntolmades-200','Βάζο 200 g','ntolmadakia-200'],['x-ntolmades-500','Συσκευασία 500 g','ntolmadakia-500']]},
  {sub:'Πίτες της Μαριάννας',p:'ampelofylla',t:'Αμπελόφυλλα',a:'leaf',v:[['x-ampelofylla-200','200 g'],['x-ampelofylla-400','400 g']]},
  {sub:'Πίτες της Μαριάννας',p:'petimezi',t:'Πετιμέζι',s:'105 ml',a:'syrup',v:[['x-petimezi','Ποσότητα']]},
  {sub:'Προϊόντα ροδιού',p:'xymos-rodi',t:'Χυμός ροδιού POM STAR',s:'100% φυσικός χυμός',a:'juice',v:[['x-rodi-250','250 ml'],['x-rodi-1l','1 L']]},
